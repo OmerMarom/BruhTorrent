@@ -2,10 +2,38 @@
 #include "bt_pch.h"
 #include "disk_io_service.h"
 #include "torrent.h"
+#include <thread>
+#include <boost/asio/io_context.hpp>
 
 using namespace std::placeholders;
 
 namespace bt {
+    using work_guard_t = boost::asio::executor_work_guard<boost::asio::io_context::executor_type>;
+
+    disk_io_service::disk_io_service(torrent& in_torrent, std::vector<file> files) :
+        m_torrent(in_torrent),
+        m_files(std::move(files)),
+        m_io_ctx(std::make_unique<boost::asio::io_context>()) {
+        // Start disk thread:
+        m_disk_thread = std::make_unique<std::thread>([this]() {
+            work_guard_t work_guard(m_io_ctx->get_executor());
+            m_io_ctx->run();
+        });
+    }
+
+    disk_io_service::disk_io_service(disk_io_service&& other) :
+        m_torrent(other.m_torrent),
+        m_files(std::move(other.m_files)),
+        m_io_ctx(std::move(other.m_io_ctx)),
+        m_disk_thread(std::move(other.m_disk_thread))
+    { }
+
+    disk_io_service::~disk_io_service() {
+        // Stop disk thread:
+        m_io_ctx->stop();
+        if (m_disk_thread->joinable()) m_disk_thread->join();
+    }
+
     void disk_io_service::write(const piece_idx_t piece_idx,
                                 buffer data,
                                 on_write_complete_fn callback) {
@@ -53,8 +81,6 @@ namespace bt {
         write_to_file(
             file_idx,
             std::move(data_for_this_write),
-            piece_offset,
-            write_size,
             file_offset,
             std::bind(&disk_io_service::write_impl, this,
                 file_idx + 1, // next file
@@ -65,5 +91,15 @@ namespace bt {
                 _1 // error
             )
         );
+    }
+
+    void disk_io_service::write_to_file(file_idx_t file_idx, buffer data, file_size_t offset,
+                                        on_write_complete_fn callback) {
+        // Perform write on disk thread:
+        m_io_ctx->post([this, file_idx, offset, cb = std::move(callback), d = std::move(data)]() {
+            error write_err =
+                disk_io_utils::write_to_disk(m_files[file_idx].stream, std::move(d), offset);
+            cb(std::move(write_err));
+        });
     }
 }

@@ -11,7 +11,7 @@ namespace bt {
     torrent::torrent(const id_t id, std::vector<peer> peers,
                      const piece_idx_t num_of_pieces,
                      const piece_size_t piece_size,
-                     std::vector<file_info> files,
+                     std::vector<file> files,
                      alert_service& alert_service) :
         m_id(id),
         m_peers(std::move(peers)),

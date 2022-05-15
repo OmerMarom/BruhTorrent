@@ -2,9 +2,6 @@
 
 #include "types.h"
 
-namespace bt {
-    using id_t = std::int64_t;
-
-    // TODO: Impl.
+namespace bt::id_utils {
     id_t generate_random_id();
 }

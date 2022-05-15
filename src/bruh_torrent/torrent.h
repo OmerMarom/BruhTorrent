@@ -6,7 +6,7 @@
 
 namespace bt {
     class peer;
-    struct file_info;
+    struct file;
     class alert_service;
     class disk_io_service;
 
@@ -15,7 +15,7 @@ namespace bt {
         torrent(id_t id, std::vector<peer> peers,
                 piece_idx_t num_of_pieces,
                 piece_size_t piece_size,
-                std::vector<file_info> files,
+                std::vector<file> files,
                 alert_service& alert_service);
 
         torrent(torrent&& other);

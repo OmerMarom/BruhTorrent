@@ -5,7 +5,7 @@
 #include <cfenv>
 #include <climits>
 
-namespace bt {
+namespace bt::id_utils {
     // TODO: Optim - probably not good enough to be used as system-wide unique id.
     // This needs to be changed in case we change id_t underlying type.
     static std::int64_t generate_random_int64() {

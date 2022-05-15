@@ -4,7 +4,7 @@
 
 namespace bt {
     id_t alert_service::subscribe(alert_subscriber& subscriber) {
-        const id_t id = generate_random_id();
+        const id_t id = id_utils::generate_random_id();
         m_subscriber_map[id] = &subscriber;
         return id;
     }

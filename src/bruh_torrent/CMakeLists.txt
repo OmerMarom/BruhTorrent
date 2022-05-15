@@ -34,3 +34,7 @@ target_precompile_headers(BruhTorrent PRIVATE "bt_pch.h")
 if(${BT_DISABLE_ASSERTS})
     add_definitions("-DBT_DISABLE_ASSERTS")
 endif()
+
+# Boost context:
+find_package(Boost 1.79.0 REQUIRED COMPONENTS context)
+target_link_libraries(BruhTorrent PRIVATE Boost::boost Boost::context)

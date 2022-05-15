@@ -19,6 +19,6 @@ namespace bt {
 
         // TODO: Impl.
         inline result<torrent_info> parse(const std::string& torrent_file_path)
-        { return { error::no_error }; }
+        { return error(); }
     };
 }
