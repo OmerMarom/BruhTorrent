@@ -1,7 +1,5 @@
 #pragma once
 
-#include <string>
-
 namespace bt {
     using port_t = std::uint16_t;
     

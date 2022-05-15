@@ -1,9 +1,14 @@
 #pragma once
 
+#include "utils/id_utils.h"
+#include "utils/result.h"
+
 namespace bt {
+    struct endpoint;
+
     struct torrent_info {
         id_t id;
-        endpoint tracker_endpoint;
+        std::unique_ptr<endpoint> tracker_endpoint;
     };
 
     class torrent_file_parser {
@@ -12,6 +17,8 @@ namespace bt {
 
         virtual ~torrent_file_parser() = default;
 
-        result<torrent_info> parse(const std::string& torrent_file_path);
+        // TODO: Impl.
+        inline result<torrent_info> parse(const std::string& torrent_file_path)
+        { return { error::no_error }; }
     };
 }

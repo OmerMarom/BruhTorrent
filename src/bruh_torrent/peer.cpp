@@ -1,10 +1,12 @@
 
+#include "bt_pch.h"
 #include "peer.h"
 #include "torrent.h"
 #include "utils/asserts.h"
+#include "utils/endpoint.h"
 
 namespace bt {
-    peer::peer(endpoint ep, torrent& in_torrent, std::vector<bool> pieces_in_possession) :
+    peer::peer(std::unique_ptr<endpoint> ep, torrent& in_torrent, std::vector<bool> pieces_in_possession) :
         m_endpoint(std::move(ep)),
         m_torrent(in_torrent),
         m_pieces_in_possession(std::move(pieces_in_possession))
@@ -15,7 +17,7 @@ namespace bt {
         );
     }
 
-    peer::peer(endpoint ep, torrent& in_torrent) :
+    peer::peer(std::unique_ptr<endpoint> ep, torrent& in_torrent) :
         m_endpoint(std::move(ep)),
         m_torrent(in_torrent),
         m_pieces_in_possession(in_torrent.num_of_pieces(), false)

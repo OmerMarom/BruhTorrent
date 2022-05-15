@@ -1,9 +1,38 @@
 
+#include "bt_pch.h"
 #include "torrent.h"
+#include "peer.h"
+#include "services/disk_io_service.h"
+#include "services/alert_service.h"
 
 using namespace std::placeholders;
 
 namespace bt {
+    torrent::torrent(const id_t id, std::vector<peer> peers,
+                     const piece_idx_t num_of_pieces,
+                     const piece_size_t piece_size,
+                     std::vector<file_info> files,
+                     alert_service& alert_service) :
+        m_id(id),
+        m_peers(std::move(peers)),
+        m_pieces_in_possession(num_of_pieces, false),
+        m_piece_size(piece_size),
+        m_alert_service(alert_service),
+        m_disk_io(std::make_unique<disk_io_service>(*this, std::move(files))) {
+        start_download();
+    }
+
+    torrent::torrent(torrent&& other) :
+        m_id(other.m_id),
+        m_peers(std::move(other.m_peers)),
+        m_pieces_in_possession(std::move(other.m_pieces_in_possession)),
+        m_piece_size(other.m_piece_size),
+        m_alert_service(other.m_alert_service),
+        m_disk_io(std::move(other.m_disk_io))
+    { }
+
+    torrent::~torrent() { }
+
     void torrent::start_download() {
         const auto num_pieces = m_pieces_in_possession.size();
         for (piece_idx_t piece_idx = 0; piece_idx < num_pieces; piece_idx++) {
@@ -36,7 +65,7 @@ namespace bt {
             m_alert_service.notify_error(err);
             // TODO: Impl - Try another peer to get the piece from.
         } else {
-            m_disk_io.write(
+            m_disk_io->write(
                 piece_idx, std::move(data),
                 std::bind(&torrent::on_piece_write_complete, this, piece_idx, _1)
             );

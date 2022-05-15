@@ -1,8 +1,5 @@
 #pragma once
 
-#include <string>
-#include <iostream>
-
 #ifdef BT_DISABLE_ASSERTS
     #define BT_ASSERT(cond, msg) 
 #else

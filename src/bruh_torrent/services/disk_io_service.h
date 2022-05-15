@@ -1,13 +1,10 @@
 #pragma once
 
-#include "../utils/result.h"
-#include <functional>
+#include "utils/result.h"
+#include "utils/types.h"
 
 namespace bt {
     class torrent;
-
-    using piece_idx_t = std::size_t;
-    using piece_size_t = std::size_t;
 
     using file_idx_t = std::size_t;
     using file_size_t = std::size_t;
@@ -16,8 +13,6 @@ namespace bt {
         std::string name;
         file_size_t size;
     };
-
-    using buffer = std::vector<int8_t>;
 
     using on_write_complete_fn = std::function<void(error)>;
 
@@ -50,9 +45,9 @@ namespace bt {
                         on_write_complete_fn callback, error err = error());
 
         // TODO: Impl.
-        void write_to_file(file_idx_t file_idx, buffer data, piece_size_t piece_offset,
-                           file_size_t write_size, file_size_t offset_in_file,
-                           on_write_complete_fn callback);
+        inline void write_to_file(file_idx_t file_idx, buffer data, piece_size_t piece_offset,
+                                  file_size_t write_size, file_size_t offset_in_file,
+                                  on_write_complete_fn callback) { }
 
         torrent& m_torrent;
         std::vector<file_info> m_files; 

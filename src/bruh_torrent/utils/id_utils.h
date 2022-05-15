@@ -1,9 +1,8 @@
 #pragma once
 
-#include <cinttypes>
+#include "types.h"
 
 namespace bt {
-    using id_t = std::int64_t;
-
-    id_t generate_random_id();
+    // TODO: Impl.
+    inline id_t generate_random_id() { return 0; }
 }

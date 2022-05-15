@@ -2,9 +2,6 @@
 
 #include "utils/id_utils.h"
 #include "utils/result.h"
-#include <vector>
-#include <string>
-#include <unordered_map>
 
 namespace bt {
     class alert_subscriber {

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <string>
-
 namespace bt {
 
     using error_code_t = std::uint8_t;
@@ -44,23 +42,26 @@ namespace bt {
 
     template <typename Tpayload>
     struct result {
-        inline result(Tpayload pl, error e) :
+        inline result() = default;
+
+        template <typename... Targs>
+        inline result(Targs... args) : payload(std::make_unique<Tpayload>(args...)) { }
+
+        inline result(std::unique_ptr<Tpayload> pl = { }, error e = { }) :
             payload(std::move(pl)),
             error(std::move(e))
-        { };
+        { }
 
-        inline result(Tpayload pl) : payload(std::move(pl)) { };
-
-        inline result(error e) : error(std::move(e)) { };
+        inline result(error e) : error(std::move(e)) { }
 
         inline result(result<Tpayload>&& other) : 
             payload(std::move(other.payload)),
             error(std::move(other.error))
-        { };
+        { }
 
         virtual ~result() = default;
 
-        Tpayload payload;
+        std::unique_ptr<Tpayload> payload;
         error error;
     };
 }

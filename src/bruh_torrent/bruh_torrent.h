@@ -1,23 +1,25 @@
 #pragma once
 
-#include "torrent.h"
-#include "services/torrent_file_parser.h"
-#include "services/tracker_service.h"
-#include "services/alert_service.h"
+#include "utils/result.h"
 
 namespace bt {
+    class torrent;
+    class torrent_file_parser;
+    class tracker_service;
+    class alert_service;
+
     class bruh_torrent {
     public:
         bruh_torrent() = default;
 
-        virtual ~bruh_torrent() = default;
+        virtual ~bruh_torrent();
 
         error add_torrent(const std::string& file_path);
 
     private:
-        std::vector<torrent> m_torrents;
-        torrent_file_parser m_torrent_file_parser;
-        tracker_service m_tracker_service;
-        alert_service m_alert_service;
+        std::vector<std::unique_ptr<torrent>> m_torrents;
+        std::unique_ptr<torrent_file_parser> m_torrent_file_parser;
+        std::unique_ptr<tracker_service> m_tracker_service;
+        std::unique_ptr<alert_service> m_alert_service;
     };
 }

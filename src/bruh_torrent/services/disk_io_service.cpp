@@ -1,6 +1,7 @@
 
+#include "bt_pch.h"
 #include "disk_io_service.h"
-#include "../torrent.h"
+#include "torrent.h"
 
 using namespace std::placeholders;
 
@@ -16,7 +17,7 @@ namespace bt {
             // TODO: Impl - What should I do with the files that have already been written?
             callback(std::move(offset_err));
         } else {
-            write_impl(file_idx, file_offset, 0, std::move(data), std::move(callback));
+            write_impl(*file_idx, file_offset, 0, std::move(data), std::move(callback));
         }
     }
 

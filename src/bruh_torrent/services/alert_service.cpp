@@ -1,4 +1,5 @@
 
+#include "bt_pch.h"
 #include "alert_service.h"
 
 namespace bt {
