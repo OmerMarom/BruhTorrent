@@ -8,6 +8,7 @@ set(bt_src
     "services/alert_service.cpp"
     "services/disk_io_service.cpp"
     "services/tracker_service.cpp"
+    "utils/id_utils.cpp"
 )
 set(bt_headers
     "bruh_torrent.h"
