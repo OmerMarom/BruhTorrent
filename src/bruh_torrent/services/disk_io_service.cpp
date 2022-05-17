@@ -3,7 +3,6 @@
 #include "bt_pch.h"
 #include "disk_io_service.h"
 #include "torrent.h"
-#include <boost/asio/io_context.hpp>
 
 using namespace std::placeholders;
 
@@ -12,26 +11,27 @@ namespace bt {
 
     disk_io_service::disk_io_service(torrent& in_torrent, std::vector<file> files) :
         m_torrent(in_torrent),
-        m_io_ctx(std::make_unique<boost::asio::io_context>()),
-        m_files(std::move(files)) {
-        // Start disk thread:
-        m_disk_thread = std::make_unique<std::thread>([this]() {
+        m_files(std::move(files)),
+        m_disk_thread([this] {
             work_guard_t work_guard(m_io_ctx->get_executor());
             m_io_ctx->run();
-        });
-    }
+        })
+    { }
 
     disk_io_service::disk_io_service(disk_io_service&& other) noexcept :
         m_torrent(other.m_torrent),
-        m_disk_thread(std::move(other.m_disk_thread)),
+        m_files(std::move(other.m_files)),
         m_io_ctx(std::move(other.m_io_ctx)),
-        m_files(std::move(other.m_files))
-    { }
+        m_disk_thread(std::move(other.m_disk_thread))
+    {
+
+        auto io = std::move(m_io_ctx);
+    }
 
     disk_io_service::~disk_io_service() {
         // Stop disk thread:
         m_io_ctx->stop();
-        if (m_disk_thread->joinable()) m_disk_thread->join();
+        if (m_disk_thread.joinable()) m_disk_thread.join();
     }
 
     void disk_io_service::write(const piece_idx_t piece_idx,
@@ -96,8 +96,8 @@ namespace bt {
     void disk_io_service::write_to_file(file_idx_t file_idx, buffer data, file_size_t offset,
                                         on_write_complete_fn callback) {
         // Perform write on disk thread:
-        m_io_ctx->post([this, file_idx, offset, cb = std::move(callback), d = std::move(data)]() {
-            error write_err = m_files[file_idx].write(std::move(d), offset);
+        m_io_ctx->post([this, file_idx, offset, cb = std::move(callback), d = std::move(data)] {
+            error write_err = m_files[file_idx].write(d, offset);
             cb(std::move(write_err));
         });
     }

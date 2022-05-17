@@ -1,27 +1,17 @@
 
 #include "bt_pch.h"
 #include "peer.h"
-#include "torrent.h"
-#include "utils/asserts.h"
 #include "utils/endpoint.h"
+#include "services/peer_messenger.h"
 
 namespace bt {
-    peer::peer(std::unique_ptr<endpoint> ep, torrent& in_torrent, std::vector<bool> pieces_in_possession) :
-        m_endpoint(std::move(ep)),
-        m_torrent(in_torrent),
-        m_pieces_in_possession(std::move(pieces_in_possession))
-    {
-        BT_ASSERT(
-            m_pieces_in_possession.size() == in_torrent.num_of_pieces(),
-            "peer::peer(): m_pieces_in_possession's size doesn't match torrent.num_of_pieces()"
-        );
-    }
-
-    peer::peer(std::unique_ptr<endpoint> ep, torrent& in_torrent) :
-        m_endpoint(std::move(ep)),
-        m_torrent(in_torrent),
-        m_pieces_in_possession(in_torrent.num_of_pieces(), false)
-    { }
+    peer::peer(id_t id, endpoint ep, std::vector<bool> pieces_in_possession,
+			   boost::asio::io_context& io_ctx, alert_service& as) :
+		m_id(id),
+		m_messenger(std::make_unique<peer_messenger>(std::move(ep), *this, io_ctx, as)),
+        m_pieces_in_possession(std::move(pieces_in_possession)),
+		m_alert_service(as)
+	{ }
 
     peer::~peer() { }
 }

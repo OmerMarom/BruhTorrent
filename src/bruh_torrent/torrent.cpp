@@ -4,6 +4,7 @@
 #include "peer.h"
 #include "services/disk_io_service.h"
 #include "services/alert_service.h"
+#include "services/peer_messenger.h"
 
 using namespace std::placeholders;
 
@@ -27,8 +28,8 @@ namespace bt {
         m_pieces_in_possession(std::move(other.m_pieces_in_possession)),
         m_piece_size(other.m_piece_size),
         m_peers(std::move(other.m_peers)),
-        m_alert_service(other.m_alert_service),
-        m_disk_io(std::move(other.m_disk_io))
+        m_disk_io(std::move(other.m_disk_io)),
+        m_alert_service(other.m_alert_service)
     { }
 
     torrent::~torrent() { }
@@ -42,10 +43,10 @@ namespace bt {
 
     void torrent::send_request_piece(const piece_idx_t piece_idx) {
         if (peer* p = choose_peer_for_piece(piece_idx)) {
-            p->send_request_piece(
+            /*p->send_request_piece(
                 piece_idx,
                 std::bind(&torrent::on_piece, this, piece_idx, _1, _2)
-            );
+            );*/
         } else {
             // TODO: Impl - Handle no peer has this piece.
         }
@@ -60,7 +61,7 @@ namespace bt {
         return nullptr;
     }
 
-    void torrent::on_piece(const piece_idx_t piece_idx, buffer data, const error err) {
+    void torrent::on_piece(const piece_idx_t piece_idx, buffer data, const error& err) {
         if (err) {
             m_alert_service.notify_error(err);
             // TODO: Impl - Try another peer to get the piece from.
@@ -72,7 +73,7 @@ namespace bt {
         }
     }
 
-    void torrent::on_piece_write_complete(const piece_idx_t piece_idx, const error err) {
+    void torrent::on_piece_write_complete(const piece_idx_t piece_idx, const error& err) {
         if (err) {
             m_alert_service.notify_error(err);
             // TODO: Impl - Abort torrent.
@@ -82,10 +83,10 @@ namespace bt {
         }
     }
 
-    // TODO: Optim - send has_piece only to the peers that dont have said piece.
+    // TODO: Optim - send has_piece only to the peers that don't have said piece.
     void torrent::send_has_piece(const piece_idx_t piece_idx) {
         for (peer& p : m_peers) {
-            p.send_has_piece(piece_idx);
+            p.messenger().send_has_piece({ piece_idx });
         }
     }
 }

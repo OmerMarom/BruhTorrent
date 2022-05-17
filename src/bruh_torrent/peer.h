@@ -1,35 +1,31 @@
 #pragma once
 
 #include "utils/types.h"
-#include "utils/result.h"
 
 namespace bt {
-    class torrent;
-    struct endpoint;
-
-    using on_piece_fn = std::function<void(buffer, error)>;
+	class alert_service;
+	struct endpoint;
+    class peer_messenger;
 
     class BT_API peer {
     public:
-        inline peer(std::unique_ptr<endpoint> ep, torrent& in_torrent, std::vector<bool> pieces_in_possession);
-
-        inline peer(std::unique_ptr<endpoint> ep, torrent& in_torrent);
+    	peer(id_t id, endpoint ep, std::vector<bool> pieces_in_possession,
+             boost::asio::io_context& io_ctx, alert_service& as);
 
         virtual ~peer();
 
-        inline bool has_piece(const piece_idx_t piece_idx)
+        peer_messenger& messenger() const { return *m_messenger; }
+
+    	bool has_piece(const piece_idx_t piece_idx)
         { return m_pieces_in_possession[piece_idx]; }
 
-        // TODO: Impl.
-    	void send_request_piece(piece_idx_t piece_idx, on_piece_fn callback) { }
+        id_t id() const { return m_id; }
 
-        // TODO: Impl.
-    	void send_has_piece(piece_idx_t piece_idx) { }
-    
     private:
-        std::unique_ptr<endpoint> m_endpoint;
-        torrent& m_torrent; // Peer should never outlive associated torrent.
+        id_t m_id;
+        std::unique_ptr<peer_messenger> m_messenger;
         // TODO: Optim - make m_pieces_in_possession a bitfield.
-        std::vector<bool> m_pieces_in_possession; 
+        std::vector<bool> m_pieces_in_possession;
+        alert_service& m_alert_service;
     };
 }

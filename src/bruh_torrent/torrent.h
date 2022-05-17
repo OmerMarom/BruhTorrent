@@ -34,9 +34,9 @@ namespace bt {
 
         void send_has_piece(piece_idx_t piece_idx);
 
-        void on_piece(piece_idx_t piece_idx, buffer data, error err);
+        void on_piece(piece_idx_t piece_idx, buffer data, const error& err);
 
-        void on_piece_write_complete(piece_idx_t piece_idx, error err);
+        void on_piece_write_complete(piece_idx_t piece_idx, const error& err);
 
     	bool has_piece(const piece_idx_t piece_idx)
         { return m_pieces_in_possession[piece_idx]; }

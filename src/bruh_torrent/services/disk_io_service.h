@@ -4,8 +4,6 @@
 #include "utils/types.h"
 #include "utils/disk_io_utils.h"
 
-namespace boost::asio { class io_context; }
-
 namespace bt {
     class torrent;
 
@@ -37,8 +35,8 @@ namespace bt {
                            on_write_complete_fn callback);
 
         torrent& m_torrent;
-        std::unique_ptr<std::thread> m_disk_thread;
-        std::unique_ptr<boost::asio::io_context> m_io_ctx;
         std::vector<file> m_files;
+        std::unique_ptr<boost::asio::io_context> m_io_ctx;
+        std::thread m_disk_thread;
     };
 }

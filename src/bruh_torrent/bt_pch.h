@@ -11,6 +11,11 @@
 #include <cinttypes>
 #include <cstddef>
 
+// Boost:
+#include <boost/asio.hpp>
+#include <boost/asio/io_context.hpp>
+
+// Fmt:
 #include <fmt/format.h>
 
 // Internal:

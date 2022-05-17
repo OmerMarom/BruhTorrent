@@ -11,7 +11,7 @@ set(bt_src
     "services/torrent_file_parser.cpp"
     "utils/id_utils.cpp"
     "utils/disk_io_utils.cpp"
-)
+ "services/peer_messenger.cpp")
 set(bt_headers
     "bruh_torrent.h"
     "peer.h"
@@ -27,7 +27,7 @@ set(bt_headers
     "utils/result.h"
     "utils/types.h"
     "utils/disk_io_utils.h"
-)
+ "services/peer_messenger.h")
 
 if(${BT_PLATFORM} STREQUAL "Windows")
     add_definitions("-DBT_PLATFORM_WINDOWS")
