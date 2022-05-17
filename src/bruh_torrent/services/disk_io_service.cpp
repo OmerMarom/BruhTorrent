@@ -23,10 +23,7 @@ namespace bt {
         m_files(std::move(other.m_files)),
         m_io_ctx(std::move(other.m_io_ctx)),
         m_disk_thread(std::move(other.m_disk_thread))
-    {
-
-        auto io = std::move(m_io_ctx);
-    }
+	{ }
 
     disk_io_service::~disk_io_service() {
         // Stop disk thread:
@@ -40,12 +37,12 @@ namespace bt {
         const auto piece_size = m_torrent.piece_size();
         const auto torrent_offset = (file_size_t)piece_idx * piece_size;
         file_size_t file_offset;
-        auto [file_idx, offset_err] = get_file_idx(torrent_offset, file_offset);
-        if (offset_err) {
+        auto file_idx_res = get_file_idx(torrent_offset, file_offset);
+        if (!file_idx_res) {
             // TODO: Impl - What should I do with the files that have already been written?
-            callback(std::move(offset_err));
+            callback(std::move(file_idx_res.error()));
         } else {
-            write_impl(*file_idx, file_offset, 0, std::move(data), std::move(callback));
+            write_impl(file_idx_res.value(), file_offset, 0, std::move(data), std::move(callback));
         }
     }
 

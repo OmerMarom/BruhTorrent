@@ -40,27 +40,35 @@ namespace bt {
         std::string message;
     };
 
-    template <typename Tpayload>
-    struct result {
+    template <typename Tval>
+    class result {
+    public:
     	result() = default;
 
-    	static void maid(Tpayload pl) {}
-
-    	result(Tpayload pl = { }, error e = { }) :
-            payload(std::make_unique<Tpayload>(std::move(pl))),
-            error(std::move(e))
+    	result(Tval pl, error e = { }) :
+            m_value(std::make_unique<Tval>(std::move(pl))),
+            m_error(std::move(e))
         { }
 
-    	result(error e) : error(std::move(e)) { }
+    	result(error e) : m_error(std::move(e)) { }
 
-    	result(result<Tpayload>&& other) noexcept : 
-            payload(std::move(other.payload)),
-            error(std::move(other.error))
+    	result(result<Tval>&& other) noexcept :
+            m_value(std::move(other.m_value)),
+            m_error(std::move(other.m_error))
         { }
 
         virtual ~result() = default;
 
-        std::unique_ptr<Tpayload> payload;
-        error error;
+        [[nodiscard]] Tval& value() const { return *m_value; }
+
+        [[nodiscard]] error& error() { return m_error; }
+
+        explicit operator bool() const {
+            return !m_error;
+        }
+
+    private:
+        std::unique_ptr<Tval> m_value;
+        bt::error m_error;
     };
 }
