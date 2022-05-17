@@ -2,9 +2,11 @@
 #include "bt_pch.h"
 #include "bruh_torrent.h"
 #include "torrent.h"
-#include "utils/endpoint.h"
 #include "services/torrent_file_parser.h"
 #include "services/tracker_service.h"
+// ReSharper disable once CppUnusedIncludeDirective
+#include "utils/endpoint.h"
+// ReSharper disable once CppUnusedIncludeDirective
 #include "services/alert_service.h"
 
 namespace bt {

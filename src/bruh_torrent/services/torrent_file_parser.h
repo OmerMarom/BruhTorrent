@@ -11,14 +11,12 @@ namespace bt {
         std::unique_ptr<endpoint> tracker_endpoint;
     };
 
-    class torrent_file_parser {
+    class BT_API torrent_file_parser {
     public:
         torrent_file_parser() = default;
 
-        virtual ~torrent_file_parser() = default;
+        virtual ~torrent_file_parser();
 
-        // TODO: Impl.
-        inline result<torrent_info> parse(const std::string& torrent_file_path)
-        { return error(); }
+        result<torrent_info> parse(const std::string& torrent_file_path);
     };
 }

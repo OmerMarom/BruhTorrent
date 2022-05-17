@@ -1,16 +1,15 @@
 #pragma once
 
-#include "utils/id_utils.h"
 #include "utils/types.h"
 #include "utils/result.h"
 
 namespace bt {
     class peer;
-    struct file;
+    class file;
     class alert_service;
     class disk_io_service;
 
-    class torrent {
+    class BT_API torrent {
     public:
         torrent(id_t id, std::vector<peer> peers,
                 piece_idx_t num_of_pieces,
@@ -18,13 +17,13 @@ namespace bt {
                 std::vector<file> files,
                 alert_service& alert_service);
 
-        torrent(torrent&& other);
+        torrent(torrent&& other) noexcept;
 
         virtual ~torrent();
 
-        inline piece_idx_t num_of_pieces() { return m_pieces_in_possession.size(); }
+        [[nodiscard]] piece_idx_t num_of_pieces() const { return m_pieces_in_possession.size(); }
 
-        inline piece_size_t piece_size() { return m_piece_size; }
+        [[nodiscard]] piece_size_t piece_size() const { return m_piece_size; }
 
     private:
         void start_download();
@@ -35,11 +34,11 @@ namespace bt {
 
         void send_has_piece(piece_idx_t piece_idx);
 
-        void on_piece(piece_idx_t piece_idx, buffer buf, error err);
+        void on_piece(piece_idx_t piece_idx, buffer data, error err);
 
         void on_piece_write_complete(piece_idx_t piece_idx, error err);
 
-        inline bool has_piece(const piece_idx_t piece_idx)
+    	bool has_piece(const piece_idx_t piece_idx)
         { return m_pieces_in_possession[piece_idx]; }
 
         id_t m_id;

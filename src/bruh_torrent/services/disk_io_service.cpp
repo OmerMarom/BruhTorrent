@@ -1,8 +1,8 @@
 
+// ReSharper disable once CppUnusedIncludeDirective
 #include "bt_pch.h"
 #include "disk_io_service.h"
 #include "torrent.h"
-#include <thread>
 #include <boost/asio/io_context.hpp>
 
 using namespace std::placeholders;
@@ -12,8 +12,8 @@ namespace bt {
 
     disk_io_service::disk_io_service(torrent& in_torrent, std::vector<file> files) :
         m_torrent(in_torrent),
-        m_files(std::move(files)),
-        m_io_ctx(std::make_unique<boost::asio::io_context>()) {
+        m_io_ctx(std::make_unique<boost::asio::io_context>()),
+        m_files(std::move(files)) {
         // Start disk thread:
         m_disk_thread = std::make_unique<std::thread>([this]() {
             work_guard_t work_guard(m_io_ctx->get_executor());
@@ -21,11 +21,11 @@ namespace bt {
         });
     }
 
-    disk_io_service::disk_io_service(disk_io_service&& other) :
+    disk_io_service::disk_io_service(disk_io_service&& other) noexcept :
         m_torrent(other.m_torrent),
-        m_files(std::move(other.m_files)),
+        m_disk_thread(std::move(other.m_disk_thread)),
         m_io_ctx(std::move(other.m_io_ctx)),
-        m_disk_thread(std::move(other.m_disk_thread))
+        m_files(std::move(other.m_files))
     { }
 
     disk_io_service::~disk_io_service() {
@@ -49,18 +49,18 @@ namespace bt {
         }
     }
 
-    result<file_idx_t> disk_io_service::get_file_idx(const file_size_t offset,
-                                                     file_size_t& file_offset) {
+    result<file_idx_t> disk_io_service::get_file_idx(const file_size_t torrent_offset,
+                                                     file_size_t& file_offset) const {
         file_size_t file_end_offset = 0;
         for (file_idx_t file_idx = 0; file_idx < m_files.size(); file_idx++) {
-            const auto file_size = m_files[file_idx].size;
+            const auto file_size = m_files[file_idx].size();
             file_end_offset += file_size;
-            if (offset <= file_end_offset) {
-                file_offset = offset - file_end_offset + file_size;
-                return { file_idx };
+            if (torrent_offset <= file_end_offset) {
+                file_offset = torrent_offset - file_end_offset + file_size;
+                return file_idx;
             }
         }
-        return { file_idx_out_of_bounds };
+        return error(file_idx_out_of_bounds);
     }
 
     void disk_io_service::write_impl(const file_idx_t file_idx, const file_size_t file_offset,
@@ -72,12 +72,12 @@ namespace bt {
             callback(std::move(err));
             return;
         }
-        const auto file_size = m_files[file_idx].size;
+        const auto file_size = m_files[file_idx].size();
         // Write cant exceed file:
         const auto write_size = std::min(piece_size - piece_offset, file_size - file_offset);
         // Create a copy of the part of the buffer that's going to be written:
-        const auto data_begin = data.begin() + piece_offset;
-        buffer data_for_this_write(data_begin, data_begin + write_size);
+        const auto data_begin = data.begin() + (std::int64_t)piece_offset;
+        buffer data_for_this_write(data_begin, data_begin + (std::int64_t)write_size);
         write_to_file(
             file_idx,
             std::move(data_for_this_write),
@@ -97,8 +97,7 @@ namespace bt {
                                         on_write_complete_fn callback) {
         // Perform write on disk thread:
         m_io_ctx->post([this, file_idx, offset, cb = std::move(callback), d = std::move(data)]() {
-            error write_err =
-                disk_io_utils::write_to_disk(m_files[file_idx].stream, std::move(d), offset);
+            error write_err = m_files[file_idx].write(std::move(d), offset);
             cb(std::move(write_err));
         });
     }

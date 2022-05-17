@@ -4,7 +4,6 @@
 #include "utils/types.h"
 #include "utils/disk_io_utils.h"
 
-namespace std { class thread; }
 namespace boost::asio { class io_context; }
 
 namespace bt {
@@ -12,11 +11,11 @@ namespace bt {
 
     using on_write_complete_fn = std::function<void(error)>;
 
-    class disk_io_service {
+    class BT_API disk_io_service {
     public:
         disk_io_service(torrent& in_torrent, std::vector<file> files);
 
-        disk_io_service(disk_io_service&& other);
+        disk_io_service(disk_io_service&& other) noexcept;
 
         virtual ~disk_io_service();
 
@@ -24,17 +23,17 @@ namespace bt {
                    buffer data,
                    on_write_complete_fn callback);
 
-        static constexpr error_code_t file_idx_out_of_bounds = 1; 
+        inline static constexpr error_code_t file_idx_out_of_bounds = 1; 
 
     private:
-        result<file_idx_t> get_file_idx(file_size_t offset,
-                                        file_size_t& offset_in_file);
+        result<file_idx_t> get_file_idx(file_size_t torrent_offset,
+                                        file_size_t& file_offset) const;
 
         void write_impl(file_idx_t file_idx, file_size_t file_offset,
                         piece_size_t piece_offset, buffer data,
                         on_write_complete_fn callback, error err = error());
 
-        void write_to_file(file_idx_t file_idx, buffer data, file_size_t offset_in_file,
+        void write_to_file(file_idx_t file_idx, buffer data, file_size_t offset,
                            on_write_complete_fn callback);
 
         torrent& m_torrent;

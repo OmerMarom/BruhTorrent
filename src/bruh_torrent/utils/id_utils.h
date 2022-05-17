@@ -3,5 +3,5 @@
 #include "types.h"
 
 namespace bt::id_utils {
-    id_t generate_random_id();
+    BT_API id_t generate_id();
 }

@@ -17,7 +17,7 @@ namespace bt::id_utils {
         return dist(e2);
     }
 
-    id_t generate_random_id() {
+    id_t generate_id() {
         return generate_random_int64();
     }
 }

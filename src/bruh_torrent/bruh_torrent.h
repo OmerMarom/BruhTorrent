@@ -8,13 +8,13 @@ namespace bt {
     class tracker_service;
     class alert_service;
 
-    class bruh_torrent {
+    class BT_API bruh_torrent {
     public:
         bruh_torrent() = default;
 
         virtual ~bruh_torrent();
 
-        error add_torrent(const std::string& file_path);
+        error add_torrent(const std::string& torrent_file_path);
 
     private:
         std::vector<std::unique_ptr<torrent>> m_torrents;

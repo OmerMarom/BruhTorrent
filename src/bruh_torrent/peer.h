@@ -9,22 +9,22 @@ namespace bt {
 
     using on_piece_fn = std::function<void(buffer, error)>;
 
-    class peer {
+    class BT_API peer {
     public:
         inline peer(std::unique_ptr<endpoint> ep, torrent& in_torrent, std::vector<bool> pieces_in_possession);
 
         inline peer(std::unique_ptr<endpoint> ep, torrent& in_torrent);
 
-        virtual ~peer() = default;
+        virtual ~peer();
 
         inline bool has_piece(const piece_idx_t piece_idx)
         { return m_pieces_in_possession[piece_idx]; }
 
         // TODO: Impl.
-        inline void send_request_piece(piece_idx_t piece_idx, on_piece_fn callback) { }
+    	void send_request_piece(piece_idx_t piece_idx, on_piece_fn callback) { }
 
         // TODO: Impl.
-        inline void send_has_piece(piece_idx_t piece_idx) { }
+    	void send_has_piece(piece_idx_t piece_idx) { }
     
     private:
         std::unique_ptr<endpoint> m_endpoint;

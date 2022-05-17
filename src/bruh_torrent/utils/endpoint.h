@@ -4,7 +4,7 @@ namespace bt {
     using port_t = std::uint16_t;
     
     struct endpoint {
-        inline endpoint(endpoint&& other) :
+	    endpoint(endpoint&& other) noexcept :
             ip(std::move(other.ip)),
             port(other.port)
         { }

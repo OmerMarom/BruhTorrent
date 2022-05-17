@@ -9,5 +9,5 @@ namespace bt {
 	using file_idx_t = std::size_t;
 	using file_size_t = std::size_t;
 
-	using buffer = std::vector<int8_t>;
+	using buffer = std::vector<char>;
 }

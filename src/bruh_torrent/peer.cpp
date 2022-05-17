@@ -22,4 +22,6 @@ namespace bt {
         m_torrent(in_torrent),
         m_pieces_in_possession(in_torrent.num_of_pieces(), false)
     { }
+
+    peer::~peer() { }
 }
