@@ -1,6 +1,6 @@
 
 // ReSharper disable once CppUnusedIncludeDirective
-#include "bt_pch.h"
+#include "base/bt_pch.h"
 #include "disk_io_service.h"
 #include "torrent.h"
 
@@ -42,7 +42,7 @@ namespace bt {
             // TODO: Impl - What should I do with the files that have already been written?
             callback(std::move(file_idx_res.error()));
         } else {
-            write_impl(file_idx_res.value(), file_offset, 0, std::move(data), std::move(callback));
+            write_impl(*file_idx_res, file_offset, 0, std::move(data), std::move(callback));
         }
     }
 

@@ -45,30 +45,27 @@ namespace bt {
     public:
     	result() = default;
 
-    	result(Tval pl, error e = { }) :
-            m_value(std::make_unique<Tval>(std::move(pl))),
-            m_error(std::move(e))
-        { }
+    	result(Tval&& value) : m_value_or_error(std::forward<Tval>(value)) { }
 
-    	result(error e) : m_error(std::move(e)) { }
+    	result(error err) : m_value_or_error(std::move(err)) { }
 
     	result(result<Tval>&& other) noexcept :
-            m_value(std::move(other.m_value)),
-            m_error(std::move(other.m_error))
+            m_value_or_error(std::move(other.m_value_or_error))
         { }
 
         virtual ~result() = default;
 
-        [[nodiscard]] Tval& value() const { return *m_value; }
+        [[nodiscard]] Tval& value() { return std::get<Tval>(m_value_or_error); }
 
-        [[nodiscard]] error& error() { return m_error; }
+        [[nodiscard]] error& error() { return std::get<bt::error>(m_value_or_error); }
+
+        Tval& operator*() { return value(); }
 
         explicit operator bool() const {
-            return !m_error;
+            return std::holds_alternative<Tval>(m_value_or_error);
         }
 
     private:
-        std::unique_ptr<Tval> m_value;
-        bt::error m_error;
+        std::variant<Tval, bt::error> m_value_or_error;
     };
 }

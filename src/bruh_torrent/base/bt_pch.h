@@ -10,6 +10,7 @@
 #include <thread>
 #include <cinttypes>
 #include <cstddef>
+#include <variant>
 
 // Boost:
 #include <boost/asio.hpp>

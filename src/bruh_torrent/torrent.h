@@ -1,7 +1,7 @@
 #pragma once
 
-#include "utils/types.h"
-#include "utils/result.h"
+#include "base/types.h"
+#include "base/result.h"
 
 namespace bt {
     class peer;

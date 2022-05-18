@@ -1,5 +1,5 @@
 
-#include "bt_pch.h"
+#include "base/bt_pch.h"
 #include "peer_messenger.h"
 #include "utils/endpoint.h"
 
@@ -14,9 +14,9 @@ namespace bt {
 	void peer_messenger::connect(const endpoint ep) {
 		try {
 			m_socket.connect({ boost::asio::ip::address::from_string(ep.ip), ep.port });
-		}
-		catch (const boost::system::system_error& se) {
+		} catch (const boost::system::system_error& se) {
 			m_alert_service.notify_error({ connection_error, se.what() });
+			// TODO: Impl - What to do in case of an error?
 		}
 	}
 

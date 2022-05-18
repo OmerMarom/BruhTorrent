@@ -1,6 +1,6 @@
 #pragma once
 
-#include "utils/types.h"
+#include "base/types.h"
 
 namespace bt {
 	class alert_service;

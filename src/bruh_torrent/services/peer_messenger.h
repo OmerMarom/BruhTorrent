@@ -2,7 +2,7 @@
 
 #include "alert_service.h"
 #include "peer.h"
-#include "utils/types.h"
+#include "base/types.h"
 
 #define STD_PH std::placeholders
 
@@ -60,8 +60,9 @@ namespace bt {
 
 	template <typename Tmsg>
 	void peer_messenger::send_message_impl(std::unique_ptr<Tmsg> msg, const std::size_t total_bytes_transferred) {
+		void* msg_raw_ptr = msg.get();
 		m_socket.async_send(
-			boost::asio::buffer((void*)msg.get(), sizeof(Tmsg)),
+			boost::asio::buffer(msg_raw_ptr, sizeof(Tmsg)),
 			[this, m = std::move(msg), total_bytes_transferred](const auto& error, const auto bytes_transferred) mutable {
 				on_message_sent(std::move(m), error, total_bytes_transferred, bytes_transferred);
 			}
@@ -74,11 +75,9 @@ namespace bt {
 		if (error) {
 			m_alert_service.notify_error({ send_error, error.to_string() });
 			// TODO: Impl - What to do in case of an error?
-		}
-		else if (total_bytes_transferred += bytes_transferred; total_bytes_transferred < sizeof(Tmsg)) {
+		} else if (total_bytes_transferred += bytes_transferred; total_bytes_transferred < sizeof(Tmsg)) {
 			send_message_impl(std::move(msg), total_bytes_transferred);
-		}
-		else {
+		} else {
 			m_alert_service.notify_info(fmt::format("Message {} sent to peer {} successfully.", Tmsg::type, m_peer.id()));
 		}
 	}

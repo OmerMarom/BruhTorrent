@@ -9,25 +9,27 @@ set(bt_src
     "services/disk_io_service.cpp"
     "services/tracker_service.cpp"
     "services/torrent_file_parser.cpp"
+    "services/peer_messenger.cpp"
     "utils/id_utils.cpp"
     "utils/disk_io_utils.cpp"
- "services/peer_messenger.cpp")
+)
 set(bt_headers
     "bruh_torrent.h"
     "peer.h"
     "torrent.h"
     "base/core.h"
+    "base/result.h"
+    "base/types.h"
+    "base/asserts.h"
     "services/alert_service.h"
     "services/disk_io_service.h"
     "services/torrent_file_parser.h"
     "services/tracker_service.h"
-    "utils/asserts.h"
+    "services/peer_messenger.h"
     "utils/endpoint.h"
     "utils/id_utils.h"
-    "utils/result.h"
-    "utils/types.h"
     "utils/disk_io_utils.h"
- "services/peer_messenger.h")
+ )
 
 if(${BT_PLATFORM} STREQUAL "Windows")
     add_definitions("-DBT_PLATFORM_WINDOWS")
@@ -42,7 +44,7 @@ endif()
 
 target_include_directories(BruhTorrent PRIVATE "./")
 
-target_precompile_headers(BruhTorrent PRIVATE "bt_pch.h")
+target_precompile_headers(BruhTorrent PRIVATE "base/bt_pch.h")
 
 if(${BT_DISABLE_ASSERTS})
     add_definitions("-DBT_DISABLE_ASSERTS")

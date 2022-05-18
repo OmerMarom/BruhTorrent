@@ -1,7 +1,7 @@
 #pragma once
 
-#include "utils/result.h"
-#include "utils/types.h"
+#include "base/result.h"
+#include "base/types.h"
 
 namespace bt {
     class torrent;

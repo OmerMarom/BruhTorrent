@@ -1,7 +1,7 @@
 #pragma once
 
-#include "result.h"
-#include "types.h"
+#include "base/result.h"
+#include "base/types.h"
 #include <fstream>
 
 namespace bt {

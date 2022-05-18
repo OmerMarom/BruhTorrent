@@ -1,7 +1,7 @@
 #pragma once
 
-#include "utils/result.h"
-#include "utils/types.h"
+#include "base/result.h"
+#include "base/types.h"
 #include "utils/disk_io_utils.h"
 
 namespace bt {

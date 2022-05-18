@@ -1,6 +1,6 @@
 
 // ReSharper disable once CppUnusedIncludeDirective
-#include "bt_pch.h"
+#include "base/bt_pch.h"
 #include "tracker_service.h"
 #include "torrent.h"
 #include "utils/endpoint.h"
