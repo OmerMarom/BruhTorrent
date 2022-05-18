@@ -1,5 +1,7 @@
 #pragma once
 
+#include "asserts.h"
+
 namespace bt {
 
     using error_code_t = std::uint8_t;
@@ -43,8 +45,6 @@ namespace bt {
     template <typename Tval>
     class result {
     public:
-    	result() = default;
-
     	result(Tval&& value) : m_value_or_error(std::forward<Tval>(value)) { }
 
     	result(error err) : m_value_or_error(std::move(err)) { }
@@ -55,14 +55,25 @@ namespace bt {
 
         virtual ~result() = default;
 
-        [[nodiscard]] Tval& value() { return std::get<Tval>(m_value_or_error); }
-
-        [[nodiscard]] error& error() { return std::get<bt::error>(m_value_or_error); }
-
         Tval& operator*() { return value(); }
 
-        explicit operator bool() const {
+        explicit operator bool() const { return has_value(); }
+
+        [[nodiscard]] Tval& value() {
+            BT_ASSERT(has_value(), "Called result::value() on a error result.");
+	        return std::get<Tval>(m_value_or_error);
+        }
+
+        [[nodiscard]] error& error() {
+	        return has_error() ? std::get<bt::error>(m_value_or_error) : error();
+        }
+
+        [[nodiscard]] bool has_value() const {
             return std::holds_alternative<Tval>(m_value_or_error);
+        }
+
+        [[nodiscard]] bool has_error() const {
+            return std::holds_alternative<bt::error>(m_value_or_error);
         }
 
     private:
