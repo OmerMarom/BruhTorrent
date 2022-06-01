@@ -21,7 +21,7 @@ namespace bt {
                    buffer data,
                    on_write_complete_fn callback);
 
-        inline static constexpr error_code_t file_idx_out_of_bounds = 1; 
+        inline static constexpr error_code_t file_idx_out_of_bounds = 2; 
 
     private:
         result<file_idx_t> get_file_idx(file_size_t torrent_offset,

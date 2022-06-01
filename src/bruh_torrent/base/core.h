@@ -9,3 +9,9 @@
 #else
 	#define BT_API
 #endif
+
+#ifdef BT_PLATFORM_WINDOWS
+	#define BT_ABS_CLASS abstract
+#else
+	#define BT_ABS_CLASS
+#endif

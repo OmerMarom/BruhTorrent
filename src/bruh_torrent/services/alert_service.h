@@ -4,7 +4,7 @@
 #include "base/result.h"
 
 namespace bt {
-    class BT_API alert_subscriber {
+    class BT_API alert_subscriber BT_ABS_CLASS {
     public:
         virtual ~alert_subscriber() = default;
         virtual void info(const std::string& msg) = 0;

@@ -1,15 +1,14 @@
 
 #include "base/bt_pch.h"
 #include "torrent.h"
-#include "peer.h"
+#include "peer_connection/peer_connection.h"
 #include "services/disk_io_service.h"
 #include "services/alert_service.h"
-#include "services/peer_messenger.h"
 
 using namespace std::placeholders;
 
 namespace bt {
-    torrent::torrent(const id_t id, std::vector<peer> peers,
+    torrent::torrent(const id_t id, std::vector<peer_connection> peers,
                      const piece_idx_t num_of_pieces,
                      const piece_size_t piece_size,
                      std::vector<file> files,
@@ -42,19 +41,16 @@ namespace bt {
     }
 
     void torrent::send_request_piece(const piece_idx_t piece_idx) {
-        if (peer* p = choose_peer_for_piece(piece_idx)) {
-            /*p->send_request_piece(
-                piece_idx,
-                std::bind(&torrent::on_piece, this, piece_idx, _1, _2)
-            );*/
+        if (peer_connection* p = choose_peer_for_piece(piece_idx)) {
+            p->request_piece(piece_idx);
         } else {
-            // TODO: Impl - Handle no peer has this piece.
+            // TODO: Impl - Handle no peer_connection has this piece.
         }
     }
 
-    // TODO: Optim - Currently this function just returns the first peer that has the piece.
-    //       Should impl. something a bit more nuanced... (piece rarity, peer bandwidth, etc...)
-    peer* torrent::choose_peer_for_piece(const piece_idx_t piece_idx) {
+    // TODO: Optim - Currently this function just returns the first peer_connection that has the piece.
+    //       Should impl. something a bit more nuanced... (piece rarity, peer_connection bandwidth, etc...)
+    peer_connection* torrent::choose_peer_for_piece(const piece_idx_t piece_idx) {
         for (auto& peer : m_peers) {
             if (peer.has_piece(piece_idx)) return &peer;
         }
@@ -64,7 +60,7 @@ namespace bt {
     void torrent::on_piece(const piece_idx_t piece_idx, buffer data, const error& err) {
         if (err) {
             m_alert_service.notify_error(err);
-            // TODO: Impl - Try another peer to get the piece from.
+            // TODO: Impl - Try another peer_connection to get the piece from.
         } else {
             m_disk_io->write(
                 piece_idx, std::move(data),
@@ -85,8 +81,8 @@ namespace bt {
 
     // TODO: Optim - send has_piece only to the peers that don't have said piece.
     void torrent::send_has_piece(const piece_idx_t piece_idx) {
-        for (peer& p : m_peers) {
-            p.messenger().send_has_piece({ piece_idx });
+        for (peer_connection& p : m_peers) {
+            p.update_has_piece(piece_idx);
         }
     }
 }

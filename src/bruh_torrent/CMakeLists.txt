@@ -4,18 +4,19 @@ cmake_minimum_required (VERSION 3.8)
 set(bt_src
     "bruh_torrent.cpp"
     "torrent.cpp"
-    "peer.cpp"
     "services/alert_service.cpp"
     "services/disk_io_service.cpp"
     "services/tracker_service.cpp"
     "services/torrent_file_parser.cpp"
-    "services/peer_messenger.cpp"
+    "services/tcp_service.cpp"
+    "peer_connection/peer_connection.cpp"
+    "peer_connection/bt_peer_connection.cpp"
     "utils/id_utils.cpp"
     "utils/disk_io_utils.cpp"
-)
+ "peer_messages.cpp")
 set(bt_headers
     "bruh_torrent.h"
-    "peer.h"
+    "peer_messages.h"
     "torrent.h"
     "base/core.h"
     "base/result.h"
@@ -25,11 +26,13 @@ set(bt_headers
     "services/disk_io_service.h"
     "services/torrent_file_parser.h"
     "services/tracker_service.h"
-    "services/peer_messenger.h"
+    "services/tcp_service.h"
+    "peer_connection/peer_connection.h"
+    "peer_connection/bt_peer_connection.h"
     "utils/endpoint.h"
     "utils/id_utils.h"
     "utils/disk_io_utils.h"
- )
+)
 
 if(${BT_PLATFORM} STREQUAL "Windows")
     add_definitions("-DBT_PLATFORM_WINDOWS")

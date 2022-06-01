@@ -17,8 +17,8 @@ namespace bt {
 
         error write(const buffer& data, file_size_t offset);
 
-        static constexpr error_code_t open_error = 1;
-        static constexpr error_code_t write_error = 1;
+        static constexpr error_code_t open_error = 2;
+        static constexpr error_code_t write_error = 3;
 
         [[nodiscard]] std::string path() const { return m_path; }
 

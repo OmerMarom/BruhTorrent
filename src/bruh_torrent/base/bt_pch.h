@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <span>
 #include <unordered_map>
 #include <memory>
 #include <functional>

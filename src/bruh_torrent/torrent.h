@@ -4,14 +4,14 @@
 #include "base/result.h"
 
 namespace bt {
-    class peer;
+    class peer_connection;
     class file;
     class alert_service;
     class disk_io_service;
 
     class BT_API torrent {
     public:
-        torrent(id_t id, std::vector<peer> peers,
+        torrent(id_t id, std::vector<peer_connection> peers,
                 piece_idx_t num_of_pieces,
                 piece_size_t piece_size,
                 std::vector<file> files,
@@ -25,10 +25,12 @@ namespace bt {
 
         [[nodiscard]] piece_size_t piece_size() const { return m_piece_size; }
 
+        [[nodiscard]] id_t id() const { return m_id; }
+
     private:
         void start_download();
 
-        peer* choose_peer_for_piece(piece_idx_t piece_idx);
+        peer_connection* choose_peer_for_piece(piece_idx_t piece_idx);
 
         void send_request_piece(piece_idx_t piece_idx);
 
@@ -45,7 +47,7 @@ namespace bt {
         // TODO: Optim - make m_pieces_in_possession a bitfield.
         std::vector<bool> m_pieces_in_possession;
         piece_size_t m_piece_size;
-        std::vector<peer> m_peers;
+        std::vector<peer_connection> m_peers;
         std::unique_ptr<disk_io_service> m_disk_io;
         alert_service& m_alert_service;
     };

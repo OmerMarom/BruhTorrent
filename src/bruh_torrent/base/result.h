@@ -3,14 +3,16 @@
 #include "asserts.h"
 
 namespace bt {
-
     using error_code_t = std::uint8_t;
 
     struct error {
-        error() = default;
-
-    	error(const error_code_t err_code, std::string msg = {}) :
+        error(const error_code_t err_code = general_error, std::string msg = {}) :
             code(err_code),
+            message(std::move(msg))
+        { }
+
+        error(std::string msg) :
+            code(general_error),
             message(std::move(msg))
         { }
 
@@ -27,6 +29,7 @@ namespace bt {
         virtual ~error() = default;
 
         static constexpr error_code_t no_error = 0;
+        static constexpr error_code_t general_error = 1;
 
     	error& operator=(const error& other) {
             code = other.code;
@@ -45,17 +48,20 @@ namespace bt {
     template <typename Tval>
     class result {
     public:
-    	result(Tval&& value) : m_value_or_error(std::forward<Tval>(value)) { }
+    	result(const Tval& val) : m_value_or_error(val) { }
+    	result(Tval&& val) : m_value_or_error(std::forward<Tval>(val)) { }
 
-    	result(error err) : m_value_or_error(std::move(err)) { }
+    	result(const error& err) : m_value_or_error(err) { }
+    	result(error&& err) : m_value_or_error(std::forward<bt::error>(err)) { }
 
     	result(result<Tval>&& other) noexcept :
             m_value_or_error(std::move(other.m_value_or_error))
         { }
 
-        virtual ~result() = default;
-
         Tval& operator*() { return value(); }
+        const Tval& operator*() const { return value(); }
+        Tval* operator->() { return &value(); }
+        const Tval* operator->() const { return &value(); }
 
         explicit operator bool() const { return has_value(); }
 
@@ -64,8 +70,19 @@ namespace bt {
 	        return std::get<Tval>(m_value_or_error);
         }
 
+        [[nodiscard]] const Tval& value() const {
+            BT_ASSERT(has_value(), "Called result::value() on a error result.");
+            return std::get<Tval>(m_value_or_error);
+        }
+
         [[nodiscard]] error& error() {
-	        return has_error() ? std::get<bt::error>(m_value_or_error) : error();
+            BT_ASSERT(has_error(), "Called result::error() on a value result.");
+	        return std::get<bt::error>(m_value_or_error);
+        }
+
+        [[nodiscard]] const bt::error& error() const {
+            BT_ASSERT(has_error(), "Called result::error() on a value result.");
+            return std::get<bt::error>(m_value_or_error);
         }
 
         [[nodiscard]] bool has_value() const {

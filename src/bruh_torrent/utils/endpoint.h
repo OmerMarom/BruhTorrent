@@ -1,9 +1,14 @@
 #pragma once
 
+#include "base/types.h"
+
 namespace bt {
-    using port_t = std::uint16_t;
-    
     struct endpoint {
+        endpoint(std::string ip, port_t port) :
+            ip(std::move(ip)),
+            port(port)
+        { }
+
 	    endpoint(endpoint&& other) noexcept :
             ip(std::move(other.ip)),
             port(other.port)
