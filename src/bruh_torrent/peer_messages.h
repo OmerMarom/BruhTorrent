@@ -39,8 +39,11 @@ namespace bt::peer_messages {
 		id_t tor_id;
 
 		static constexpr msg_id_t init_conn_msg_id = 1;
+        static constexpr std::size_t size = sizeof(id_t);
 
-		init_conn_msg(const id_t in_tor_id) : tor_id(in_tor_id) { }
+        static result<init_conn_msg> from_buffer(const const_buffer_ref& msg_buf);
+
+        explicit init_conn_msg(const id_t in_tor_id) : tor_id(in_tor_id) { }
 
 		[[nodiscard]] msg_id_t id() const override { return init_conn_msg_id; }
 		[[nodiscard]] const char* name() const override { return "INIT_CONN"; }
@@ -51,17 +54,26 @@ namespace bt::peer_messages {
 	};
 
 	struct conn_res_msg : peer_message {
-		// pieces_in_possession == std::nullopt means we don't have torrent.
-		std::optional<std::vector<bool>> pieces_in_possession;
+		// pieces_in_possession.empty() means we don't have torrent.
+		std::vector<bool> pieces_in_possession;
 
 		static constexpr msg_id_t conn_res_msg_id = 2;
 
-		[[nodiscard]] msg_id_t id() const override { return conn_res_msg_id; }
+        static result<conn_res_msg> from_buffer(const const_buffer_ref& msg_buf,
+                                                piece_idx_t num_of_pieces);
+
+        explicit conn_res_msg(std::vector<bool> pip = {}) :
+            pieces_in_possession(std::move(pip))
+        { }
+
+        [[nodiscard]] bool has_tor() const { return !pieces_in_possession.empty(); }
+
+        [[nodiscard]] msg_id_t id() const override { return conn_res_msg_id; }
 		[[nodiscard]] const char* name() const override { return "CONN_RES"; }
 
 	protected:
 		[[nodiscard]] std::size_t msg_size() const override {
-			return sizeof(bool) + (pieces_in_possession ? pieces_in_possession->size() : 0);
+			return pieces_in_possession.size();
 		}
 
 		void to_buffer_impl(buffer_ref& msg_buf) const override;
@@ -75,7 +87,7 @@ namespace bt::peer_messages {
 
 		static result<has_piece_msg> from_buffer(const const_buffer_ref& msg_buf);
 
-		has_piece_msg(const piece_idx_t p_idx) : piece_idx(p_idx) { }
+		explicit has_piece_msg(const piece_idx_t p_idx) : piece_idx(p_idx) { }
 
 		[[nodiscard]] msg_id_t id() const override { return msg_id; }
 		[[nodiscard]] const char* name() const override { return "HAS_PIECE"; }
@@ -94,7 +106,7 @@ namespace bt::peer_messages {
 
 		static result<request_piece_msg> from_buffer(const const_buffer_ref& msg_buf);
 
-		request_piece_msg(const piece_idx_t p_idx) : piece_idx(p_idx) { }
+		explicit request_piece_msg(const piece_idx_t p_idx) : piece_idx(p_idx) { }
 
 		[[nodiscard]] msg_id_t id() const override { return msg_id; }
 		[[nodiscard]] const char* name() const override { return "REQ_PIECE"; }

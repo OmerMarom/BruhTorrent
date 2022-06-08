@@ -5,8 +5,9 @@
 #include "torrent.h"
 
 namespace bt {
-    peer_connection::peer_connection(torrent* tor, alert_service& as) :
+    peer_connection::peer_connection(torrent* tor, bruh_torrent& bt, alert_service& as) :
 		m_torrent(tor),
+        m_bt(bt),
 		m_alert_service(as)
 	{ }
 

@@ -25,6 +25,8 @@ namespace bt {
 
 		void receive(on_received callback);
 
+		void receive_once(on_received callback);
+
 		static constexpr error_code_t connection_error = 2;
 		static constexpr error_code_t send_error = 3;
 		static constexpr error_code_t receive_error = 4;
@@ -32,10 +34,11 @@ namespace bt {
 	private:
 		void connect(on_connected callback);
 
-		static constexpr std::size_t msg_buffer_size = 10000;
+        void receive_impl(std::shared_ptr<buffer> shared_receive_buf, on_received callback);
 
-		boost::asio::ip::tcp::socket m_socket;
+        void receive_once_impl(std::shared_ptr<buffer> shared_receive_buf, on_received callback);
+
+        boost::asio::ip::tcp::socket m_socket;
 		bt::endpoint m_endpoint;
-		buffer m_msg_buf = buffer(msg_buffer_size);
 	};
 }

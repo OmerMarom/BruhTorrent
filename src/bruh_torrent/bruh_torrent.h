@@ -1,6 +1,7 @@
 #pragma once
 
 #include "base/result.h"
+#include "base/types.h"
 
 namespace bt {
     class torrent;
@@ -8,16 +9,16 @@ namespace bt {
     class tracker_service;
     class alert_service;
 
-    class BT_API bruh_torrent {
+    class bruh_torrent {
     public:
-        bruh_torrent() = default;
-
-        virtual ~bruh_torrent();
+        ~bruh_torrent();
 
         error add_torrent(const std::string& torrent_file_path);
 
+        torrent* get_torrent(id_t tor_id);
+
     private:
-        std::vector<std::unique_ptr<torrent>> m_torrents;
+        std::unordered_map<id_t, std::unique_ptr<torrent>> m_torrents;
         std::unique_ptr<torrent_file_parser> m_torrent_file_parser;
         std::unique_ptr<tracker_service> m_tracker_service;
         std::unique_ptr<alert_service> m_alert_service;

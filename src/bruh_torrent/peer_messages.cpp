@@ -48,18 +48,45 @@ namespace bt::peer_messages {
 		write_to_buffer(tor_id, buf_ptr);
 	}
 
-	void conn_res_msg::to_buffer_impl(buffer_ref& msg_buf) const {
+    result<init_conn_msg> init_conn_msg::from_buffer(const const_buffer_ref &msg_buf) {
+        if (msg_buf.size() != init_conn_msg::size) {
+            return error(
+                    invalid_msg_size,
+                    "Received INIT_CONN message of invalid size."
+            );
+        }
+        auto* buf_ptr = msg_buf.data();
+        const auto tor_id = read_from_buffer<id_t>(buf_ptr);
+        return init_conn_msg(tor_id);
+    }
+
+    void conn_res_msg::to_buffer_impl(buffer_ref& msg_buf) const {
 		auto* buf_ptr = msg_buf.data();
-		const bool has_tor = pieces_in_possession.has_value();
-		write_to_buffer(has_tor, buf_ptr);
-		if (has_tor) {
-			for (const bool has_piece : *pieces_in_possession) {
-				write_to_buffer(has_piece, buf_ptr);
-			}
-		}
+        for (const bool has_piece : pieces_in_possession) {
+            write_to_buffer(has_piece, buf_ptr);
+        }
 	}
 
-	result<has_piece_msg> has_piece_msg::from_buffer(const const_buffer_ref& msg_buf) {
+    result<conn_res_msg> conn_res_msg::from_buffer(const const_buffer_ref &msg_buf,
+                                                   const piece_idx_t num_of_pieces) {
+        if (msg_buf.empty()) {
+            return conn_res_msg();
+        }
+        if (msg_buf.size() != num_of_pieces) {
+            return error(
+                    invalid_msg_size,
+                    "Received CONN_RES message of invalid size."
+            );
+        }
+        std::vector<bool> pieces_in_possession(num_of_pieces);
+        auto* buf_ptr = msg_buf.data();
+        for (auto&& has_piece : pieces_in_possession) {
+            has_piece = read_from_buffer<bool>(buf_ptr);
+        }
+        return conn_res_msg(std::move(pieces_in_possession));
+    }
+
+    result<has_piece_msg> has_piece_msg::from_buffer(const const_buffer_ref& msg_buf) {
 		if (msg_buf.size() != has_piece_msg::size) {
 			return error(
 				invalid_msg_size, 

@@ -26,7 +26,7 @@ namespace bt {
 	error file::write(const buffer& data, const file_size_t offset)
 	{
 		m_stream.seekg((std::int64_t)offset, std::ios::beg);
-		m_stream.write(data.data(), (std::int64_t)data.size());
+		m_stream.write((char*)data.data(), (std::int64_t)data.size());
 		if (m_stream.fail()) {
 			// TODO: Optim - Provide clearer err message.
 			return { file::write_error, fmt::format("Write error for file {}.", m_path) };

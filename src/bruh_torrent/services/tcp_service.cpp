@@ -2,6 +2,8 @@
 #include "base/bt_pch.h"
 #include "tcp_service.h"
 
+#include <utility>
+
 using namespace std::placeholders;
 
 namespace bt {
@@ -20,8 +22,7 @@ namespace bt {
 
 	tcp_service::tcp_service(tcp_service&& other) noexcept :
 		m_socket(std::move(other.m_socket)),
-		m_endpoint(std::move(other.m_endpoint)),
-		m_msg_buf(std::move(other.m_msg_buf))
+		m_endpoint(std::move(other.m_endpoint))
 	{ }
 
 	void tcp_service::connect(on_connected callback) {
@@ -50,16 +51,37 @@ namespace bt {
 	}
 
 	void tcp_service::receive(on_received callback) {
-		boost::asio::async_read(
-			m_socket,
-			boost::asio::buffer(m_msg_buf),
-			[this, callback = std::move(callback)](const auto& err, const auto bytes_transferred) {
-				if (err) {
-					callback(error(receive_error, err.to_string()));
-				} else {
-					callback(buffer_ref(m_msg_buf.begin(), bytes_transferred));
-				}
-			}
-		);
+        receive_impl(std::make_shared<buffer>(), std::move(callback));
 	}
+
+    void tcp_service::receive_impl(std::shared_ptr<buffer> shared_receive_buf, on_received callback) {
+        // TODO: Impl - add interval to receives.
+        receive_once_impl(
+            shared_receive_buf,
+            [this, srb = std::move(shared_receive_buf), callback = std::move(callback)]
+            (auto&& r_receive_buf) mutable {
+                callback(std::forward<decltype(r_receive_buf)>(r_receive_buf));
+                receive_impl(std::move(srb), std::move(callback));
+            }
+        );
+    }
+
+    void tcp_service::receive_once(on_received callback) {
+        receive_once_impl(std::make_shared<buffer>(), std::move(callback));
+    }
+
+    void tcp_service::receive_once_impl(std::shared_ptr<buffer> shared_receive_buf, on_received callback) {
+        boost::asio::async_read(
+            m_socket,
+            boost::asio::buffer(*shared_receive_buf),
+            [srb = std::move(shared_receive_buf), callback = std::move(callback)]
+            (const auto& err, const auto bytes_transferred) {
+                if (err) {
+                    callback(error(receive_error, err.to_string()));
+                } else {
+                    callback(const_buffer_ref(srb->begin(), bytes_transferred));
+                }
+            }
+        );
+    }
 }

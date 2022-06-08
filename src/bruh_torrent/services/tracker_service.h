@@ -11,7 +11,7 @@ namespace bt {
     public:
         tracker_service() = default;
 
-        virtual ~tracker_service();
+        ~tracker_service();
 
         tracker_service(const tracker_service&) = default;
         tracker_service(tracker_service&&) = default;

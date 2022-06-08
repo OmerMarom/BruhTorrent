@@ -11,35 +11,23 @@ namespace bt {
             message(std::move(msg))
         { }
 
-        error(std::string msg) :
+        explicit error(std::string msg) :
             code(general_error),
             message(std::move(msg))
         { }
 
-    	error(const error& other) :
-            code(other.code),
-            message(other.message)
-        { }
+    	error(const error& other) = default;
+        error& operator=(const error& other) = default;
 
     	error(error&& other) noexcept :
             code(other.code),
             message(std::move(other.message))
         { }
 
-        virtual ~error() = default;
-
         static constexpr error_code_t no_error = 0;
         static constexpr error_code_t general_error = 1;
 
-    	error& operator=(const error& other) {
-            code = other.code;
-            message = other.message;
-            return *this;
-        }
-
-        explicit operator bool() const {
-            return code != no_error;
-        }
+        explicit operator bool() const { return code != no_error; }
 
         error_code_t code = no_error;
         std::string message;

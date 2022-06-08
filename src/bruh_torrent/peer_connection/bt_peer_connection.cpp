@@ -10,18 +10,18 @@
 using namespace std::placeholders;
 
 namespace bt {
-	bt_peer_connection::bt_peer_connection(torrent& tor, alert_service& as,
+	bt_peer_connection::bt_peer_connection(torrent& tor, bruh_torrent& bt, alert_service& as,
 										   endpoint ep, boost::asio::io_context& io_ctx) :
-		peer_connection(&tor, as),
+		peer_connection(&tor, bt, as),
 		m_tcp(std::move(ep), io_ctx,
 			  std::bind(&bt_peer_connection::on_connected, this, _1))
 	{ }
 
-	bt_peer_connection::bt_peer_connection(alert_service& as, tcp_service tcp) :
-		peer_connection(nullptr, as),
+	bt_peer_connection::bt_peer_connection(alert_service& as, bruh_torrent& bt, tcp_service tcp) :
+		peer_connection(nullptr, bt, as),
 		m_tcp(std::move(tcp)) {
-		m_tcp.receive(
-			std::bind(&bt_peer_connection::on_init_conn_received, this, _1));
+		m_tcp.receive([this](auto&& msg)
+            { on_init_conn_received(std::forward<decltype(msg)>(msg)); });
 	}
 
 	void bt_peer_connection::on_connected(const error& err) {
@@ -79,11 +79,12 @@ namespace bt {
 			m_alert_service.notify_error(r_msg_buf.error());
 			// TODO: Impl - Handle error.
 		} else {
-			auto r_cr_msg = peer_messages::conn_res_msg::from_buffer(*r_msg_buf);
+			auto r_cr_msg = peer_messages::conn_res_msg::from_buffer(
+                    *r_msg_buf, m_torrent->num_of_pieces());
 			if (!r_cr_msg) {
 				m_alert_service.notify_error(r_cr_msg.error());
 				// TODO: Impl - Handle msg invalid.
-			} else if (!r_cr_msg->has_tor) {
+			} else if (!r_cr_msg->has_tor()) {
 				// TODO: Impl - Handle peer doesn't have torrent.
 			} else {
 				m_pieces_in_possession = std::move(r_cr_msg->pieces_in_possession);
@@ -106,7 +107,8 @@ namespace bt {
 				if (!m_torrent) {
 					// TODO: Impl - Handle no torrent (send false in has_tor field of conn_res).
 				} else {
-					m_tcp.receive(std::bind(&bt_peer_connection::on_msg_received, this, _1));
+					m_tcp.receive([this](auto&& msg_buf)
+                        { on_msg_received(std::forward<decltype(msg_buf)>(msg_buf)); });
 					// TODO: Impl - Send conn_res_msg.
 				}
 			}

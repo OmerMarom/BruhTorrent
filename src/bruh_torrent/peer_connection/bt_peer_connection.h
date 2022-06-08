@@ -12,10 +12,10 @@ namespace bt {
 
 	class BT_API bt_peer_connection : public peer_connection {
 	public:
-		bt_peer_connection(torrent& tor, alert_service& as,
+		bt_peer_connection(torrent& tor, bruh_torrent& bt, alert_service& as,
 						   endpoint ep, boost::asio::io_context& io_ctx);
 
-		bt_peer_connection(alert_service& as, tcp_service tcp);
+		bt_peer_connection(alert_service& as, bruh_torrent& bt, tcp_service tcp);
 
 		// Outgoing messages:
 		void request_piece(piece_idx_t piece_idx) override;
