@@ -3,10 +3,6 @@
 #include "peer_connection/bt_peer_connection.h"
 
 namespace bt::peer_messages {
-	msg_id_t get_msg_id(const const_buffer_ref& msg_buf) {
-		return *(const msg_id_t*)msg_buf.data();
-	}
-
 	error from_buffer(const const_buffer_ref& msg_buf, bt_peer_connection& bt_pc) {
 		auto* buf_ptr = msg_buf.data();
 		const const_buffer_ref msg_buf_ref(
@@ -17,14 +13,17 @@ namespace bt::peer_messages {
 				if (!r_has_piece) return r_has_piece.error();
 				bt_pc.on_has_piece(*r_has_piece);
 				break;
-			}
-			case request_piece_msg::msg_id: {
+			} case request_piece_msg::msg_id: {
 				auto r_req_piece = request_piece_msg::from_buffer(msg_buf_ref);
 				if (!r_req_piece) return r_req_piece.error();
 				bt_pc.on_req_piece(*r_req_piece);
 				break;
-			}
-			default: {
+			} case piece_msg::msg_id: {
+                auto r_piece = piece_msg::from_buffer(msg_buf_ref);
+                if (!r_piece) return r_piece.error();
+                bt_pc.on_piece(*r_piece);
+                break;
+            } default: {
 				return {
 					invalid_msg_id,
 					fmt::format("Received message with invalid ID {}.", msg_id)
@@ -67,17 +66,11 @@ namespace bt::peer_messages {
         }
 	}
 
-    result<conn_res_msg> conn_res_msg::from_buffer(const const_buffer_ref &msg_buf,
-                                                   const piece_idx_t num_of_pieces) {
+    result<conn_res_msg> conn_res_msg::from_buffer(const const_buffer_ref &msg_buf) {
         if (msg_buf.empty()) {
             return conn_res_msg();
         }
-        if (msg_buf.size() != num_of_pieces) {
-            return error(
-                    invalid_msg_size,
-                    "Received CONN_RES message of invalid size."
-            );
-        }
+        const auto num_of_pieces = msg_buf.size();
         std::vector<bool> pieces_in_possession(num_of_pieces);
         auto* buf_ptr = msg_buf.data();
         for (auto&& has_piece : pieces_in_possession) {
@@ -119,4 +112,24 @@ namespace bt::peer_messages {
 		auto* buf_ptr = msg_buf.data();
 		write_to_buffer(piece_idx, buf_ptr);
 	}
+
+    result<piece_msg> piece_msg::from_buffer(const const_buffer_ref& msg_buf) {
+        if (msg_buf.size() < sizeof(piece_idx_t)) {
+            return error(
+                    invalid_msg_size,
+                    "Received PIECE message of invalid size."
+            );
+        }
+        auto* buf_ptr = msg_buf.data();
+        const auto piece_idx = read_from_buffer<piece_idx_t>(buf_ptr);
+        const auto piece_size = msg_buf.size() - sizeof(piece_idx_t);
+        buffer piece_buf(buf_ptr, buf_ptr + piece_size);
+        return piece_msg(piece_idx, std::move(piece_buf));
+    }
+
+    void piece_msg::to_buffer_impl(buffer_ref &msg_buf) const {
+        auto* buf_ptr = msg_buf.data();
+        write_to_buffer(piece_idx, buf_ptr);
+        for (const auto byte : piece_buf) write_to_buffer(byte, buf_ptr);
+    }
 }

@@ -14,14 +14,14 @@ namespace bt {
 										   endpoint ep, boost::asio::io_context& io_ctx) :
 		peer_connection(&tor, bt, as),
 		m_tcp(std::move(ep), io_ctx,
-			  std::bind(&bt_peer_connection::on_connected, this, _1))
+              [this](auto&& err) { on_connected(std::forward<decltype(err)>(err)); })
 	{ }
 
 	bt_peer_connection::bt_peer_connection(alert_service& as, bruh_torrent& bt, tcp_service tcp) :
 		peer_connection(nullptr, bt, as),
 		m_tcp(std::move(tcp)) {
 		m_tcp.receive([this](auto&& msg)
-            { on_init_conn_received(std::forward<decltype(msg)>(msg)); });
+        { on_init_conn_received(std::forward<decltype(msg)>(msg)); });
 	}
 
 	void bt_peer_connection::on_connected(const error& err) {
@@ -45,50 +45,73 @@ namespace bt {
 	}
 
 	void bt_peer_connection::on_has_piece(const peer_messages::has_piece_msg& hp_msg) {
-		if (!m_pieces_in_possession) {
-			// TODO: Impl - Handle bitfield wasn't initialized.
-		} else if (hp_msg.piece_idx > m_pieces_in_possession->size()) {
-			m_alert_service.notify_error({
-				invalid_piece_idx,
-				fmt::format("Received invalid piece idx from peer at {}.", m_tcp.endpoint().ip)
-			});
-			// TODO: Impl - Handle invalid message.
-		} else {
+        if (!validate_piece_idx(hp_msg.piece_idx)) {
+            // TODO: Impl - Handle invalid piece_idx.
+        } else {
 			m_pieces_in_possession->at(hp_msg.piece_idx) = true;
 		}
 	}
 
 	void bt_peer_connection::on_req_piece(const peer_messages::request_piece_msg& rp_msg) const {
-		if (!m_pieces_in_possession) {
-			// TODO: Impl - Handle bitfield wasn't initialized.
-		} else if (rp_msg.piece_idx > m_pieces_in_possession->size()) {
-			m_alert_service.notify_error({
-				invalid_piece_idx,
-				fmt::format("Received invalid piece idx from peer at {}.", m_tcp.endpoint().ip)
-				});
-			// TODO: Impl - Handle invalid message.
-		} else if (!m_pieces_in_possession->at(rp_msg.piece_idx)) {
+        if (!validate_piece_idx(rp_msg.piece_idx)) {
+            // TODO: Impl - Handle invalid piece_idx.
+        } else if (!m_pieces_in_possession->at(rp_msg.piece_idx)) {
 			// TODO: Impl - Handle we don't have piece.
 		} else {
 			// TODO: Impl - Send piece.
 		}
 	}
 
+    void bt_peer_connection::on_piece(const peer_messages::piece_msg& p_msg) {
+        if (!validate_piece_idx(p_msg.piece_idx)) {
+            // TODO: Impl - Handle invalid piece_idx.
+        } else if (m_pieces_in_possession->at(p_msg.piece_idx)) {
+            // TODO: Impl - Handle we already have piece.
+        } else if (p_msg.piece_buf.size() != m_torrent->piece_size()) {
+            // TODO: Impl - Handle invalid piece size.
+        } else {
+            // TODO: Impl - Receive piece.
+        }
+    }
+
+    bool bt_peer_connection::validate_piece_idx(const piece_idx_t piece_idx) const {
+        if (!m_pieces_in_possession) {
+            // TODO: Impl - Handle bitfield wasn't initialized.
+            return false;
+        } else if (piece_idx > m_pieces_in_possession->size()) {
+            m_alert_service.notify_error({
+                invalid_piece_idx,
+                fmt::format("Received invalid piece idx from peer at {}.", m_tcp.endpoint().ip)
+            });
+            // TODO: Impl - Handle invalid piece idx.
+            return false;
+        }
+        return true;
+    }
+
 	void bt_peer_connection::on_conn_res_received(result<const_buffer_ref> r_msg_buf) {
 		if (!r_msg_buf) {
 			m_alert_service.notify_error(r_msg_buf.error());
 			// TODO: Impl - Handle error.
 		} else {
-			auto r_cr_msg = peer_messages::conn_res_msg::from_buffer(
-                    *r_msg_buf, m_torrent->num_of_pieces());
+			auto r_cr_msg = peer_messages::conn_res_msg::from_buffer(*r_msg_buf);
 			if (!r_cr_msg) {
-				m_alert_service.notify_error(r_cr_msg.error());
-				// TODO: Impl - Handle msg invalid.
-			} else if (!r_cr_msg->has_tor()) {
+                m_alert_service.notify_error(r_cr_msg.error());
+                // TODO: Impl - Handle msg invalid.
+            } else if (!r_cr_msg->has_tor()) {
 				// TODO: Impl - Handle peer doesn't have torrent.
-			} else {
+			} else if (r_cr_msg->pieces_in_possession.size() != m_torrent->num_of_pieces()) {
+                m_alert_service.notify_error({
+                    invalid_num_of_pieces,
+                    fmt::format(
+                            "Received a CONN_RES message with an invalid no. of pieces from peer at {}.",
+                            m_tcp.endpoint().ip
+                    )
+                });
+            } else {
 				m_pieces_in_possession = std::move(r_cr_msg->pieces_in_possession);
-				m_tcp.receive(std::bind(&bt_peer_connection::on_msg_received, this, _1));
+				m_tcp.receive([this](auto&& msg_buf)
+                { on_msg_received(std::forward<decltype(msg_buf)>(msg_buf)); });
 			}
 		}
 	}

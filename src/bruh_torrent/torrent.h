@@ -21,11 +21,9 @@ namespace bt {
 
         virtual ~torrent();
 
-        [[nodiscard]] piece_idx_t num_of_pieces() const { return m_pieces_in_possession.size(); }
-
-        [[nodiscard]] piece_size_t piece_size() const { return m_piece_size; }
-
         [[nodiscard]] id_t id() const { return m_id; }
+        [[nodiscard]] piece_idx_t num_of_pieces() const { return (piece_idx_t)m_pieces_in_possession.size(); }
+        [[nodiscard]] piece_size_t piece_size() const { return m_piece_size; }
 
     private:
         void start_download();
