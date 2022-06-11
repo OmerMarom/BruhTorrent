@@ -23,8 +23,7 @@ namespace bt {
 		m_stream(std::move(other.m_stream))
 	{ }
 
-	error file::write(const buffer& data, const file_size_t offset)
-	{
+	error file::write(const buffer& data, const file_size_t offset) {
 		m_stream.seekg((std::int64_t)offset, std::ios::beg);
 		m_stream.write((char*)data.data(), (std::int64_t)data.size());
 		if (m_stream.fail()) {

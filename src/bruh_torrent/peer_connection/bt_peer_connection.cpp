@@ -58,6 +58,7 @@ namespace bt {
 			// TODO: Impl - Handle we don't have piece.
 		} else {
 			// TODO: Impl - Send piece.
+
 		}
 	}
 

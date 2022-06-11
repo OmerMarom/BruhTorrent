@@ -7,6 +7,7 @@ namespace bt {
     class peer_connection;
     class file;
     class alert_service;
+    class disk_executor;
     class disk_io_service;
 
     class BT_API torrent {
@@ -15,11 +16,12 @@ namespace bt {
                 piece_idx_t num_of_pieces,
                 piece_size_t piece_size,
                 std::vector<file> files,
+                disk_executor& executor,
                 alert_service& alert_service);
 
         torrent(torrent&& other) noexcept;
 
-        virtual ~torrent();
+        ~torrent();
 
         [[nodiscard]] id_t id() const { return m_id; }
         [[nodiscard]] piece_idx_t num_of_pieces() const { return (piece_idx_t)m_pieces_in_possession.size(); }

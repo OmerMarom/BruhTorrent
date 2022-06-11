@@ -6,16 +6,14 @@
 
 namespace bt {
     class torrent;
+    class disk_executor;
 
     using on_write_complete_fn = std::function<void(error)>;
 
     class BT_API disk_io_service {
     public:
-        disk_io_service(torrent& in_torrent, std::vector<file> files);
-
+        disk_io_service(torrent& tor, std::vector<file> files, disk_executor& executor);
         disk_io_service(disk_io_service&& other) noexcept;
-
-        virtual ~disk_io_service();
 
         void write(piece_idx_t piece_idx,
                    buffer data,
@@ -29,14 +27,10 @@ namespace bt {
 
         void write_impl(file_idx_t file_idx, file_size_t file_offset,
                         piece_size_t piece_offset, buffer data,
-                        on_write_complete_fn callback, error err = error());
-
-        void write_to_file(file_idx_t file_idx, buffer data, file_size_t offset,
-                           on_write_complete_fn callback);
+                        on_write_complete_fn callback, error err = {});
 
         torrent& m_torrent;
         std::vector<file> m_files;
-        std::unique_ptr<boost::asio::io_context> m_io_ctx;
-        std::thread m_disk_thread;
+        disk_executor& m_executor;
     };
 }

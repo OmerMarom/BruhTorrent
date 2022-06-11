@@ -12,12 +12,13 @@ namespace bt {
                      const piece_idx_t num_of_pieces,
                      const piece_size_t piece_size,
                      std::vector<file> files,
+                     disk_executor& executor,
                      alert_service& alert_service) :
         m_id(id),
         m_pieces_in_possession(num_of_pieces, false),
         m_piece_size(piece_size),
         m_peers(std::move(peers)),
-        m_disk_io(std::make_unique<disk_io_service>(*this, std::move(files))),
+        m_disk_io(std::make_unique<disk_io_service>(*this, std::move(files), executor)),
         m_alert_service(alert_service) {
         start_download();
     }

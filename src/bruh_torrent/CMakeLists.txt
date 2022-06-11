@@ -13,7 +13,8 @@ set(bt_src
     "peer_connection/bt_peer_connection.cpp"
     "utils/id_utils.cpp"
     "utils/disk_io_utils.cpp"
- "peer_messages.cpp")
+    "peer_messages.cpp"
+    "services/disk_executor.cpp")
 set(bt_headers
     "bruh_torrent.h"
     "peer_messages.h"
@@ -32,7 +33,7 @@ set(bt_headers
     "utils/endpoint.h"
     "utils/id_utils.h"
     "utils/disk_io_utils.h"
-)
+    "services/disk_executor.h")
 
 if(${BT_PLATFORM} STREQUAL "Windows")
     add_definitions("-DBT_PLATFORM_WINDOWS")
