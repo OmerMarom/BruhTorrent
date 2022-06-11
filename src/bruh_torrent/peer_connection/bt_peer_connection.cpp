@@ -13,15 +13,13 @@ namespace bt {
 	bt_peer_connection::bt_peer_connection(torrent& tor, bruh_torrent& bt, alert_service& as,
 										   endpoint ep, boost::asio::io_context& io_ctx) :
 		peer_connection(&tor, bt, as),
-		m_tcp(std::move(ep), io_ctx,
-              [this](auto&& err) { on_connected(std::forward<decltype(err)>(err)); })
+		m_tcp(std::move(ep), io_ctx, BIND_THIS_SINGLE_ARG(on_connected))
 	{ }
 
 	bt_peer_connection::bt_peer_connection(alert_service& as, bruh_torrent& bt, tcp_service tcp) :
 		peer_connection(nullptr, bt, as),
 		m_tcp(std::move(tcp)) {
-		m_tcp.receive([this](auto&& msg)
-        { on_init_conn_received(std::forward<decltype(msg)>(msg)); });
+		m_tcp.receive_once(BIND_THIS_SINGLE_ARG(on_init_conn_received));
 	}
 
 	void bt_peer_connection::on_connected(const error& err) {
@@ -33,6 +31,7 @@ namespace bt {
 				"TCP connection established to peer at {}.", m_tcp.endpoint().ip
 			));
 			send_message(peer_messages::init_conn_msg(m_torrent->id()));
+            m_tcp.receive_once(BIND_THIS_SINGLE_ARG(on_conn_res_received));
 		}
 	}
 
@@ -93,27 +92,27 @@ namespace bt {
 		if (!r_msg_buf) {
 			m_alert_service.notify_error(r_msg_buf.error());
 			// TODO: Impl - Handle error.
-		} else {
-			auto r_cr_msg = peer_messages::conn_res_msg::from_buffer(*r_msg_buf);
-			if (!r_cr_msg) {
-                m_alert_service.notify_error(r_cr_msg.error());
-                // TODO: Impl - Handle msg invalid.
-            } else if (!r_cr_msg->has_tor()) {
-				// TODO: Impl - Handle peer doesn't have torrent.
-			} else if (r_cr_msg->pieces_in_possession.size() != m_torrent->num_of_pieces()) {
-                m_alert_service.notify_error({
-                    invalid_num_of_pieces,
-                    fmt::format(
-                            "Received a CONN_RES message with an invalid no. of pieces from peer at {}.",
-                            m_tcp.endpoint().ip
-                    )
-                });
-            } else {
-				m_pieces_in_possession = std::move(r_cr_msg->pieces_in_possession);
-				m_tcp.receive([this](auto&& msg_buf)
-                { on_msg_received(std::forward<decltype(msg_buf)>(msg_buf)); });
-			}
+            return;
 		}
+        auto r_cr_msg = peer_messages::conn_res_msg::from_buffer(*r_msg_buf);
+        if (!r_cr_msg) {
+            m_alert_service.notify_error(r_cr_msg.error());
+            // TODO: Impl - Handle msg invalid.
+        } else if (!r_cr_msg->has_tor()) {
+            // TODO: Impl - Handle peer doesn't have torrent.
+        } else if (r_cr_msg->pieces_in_possession.size() != m_torrent->num_of_pieces()) {
+            m_alert_service.notify_error({
+                invalid_num_of_pieces,
+                fmt::format(
+                        "Received a CONN_RES message with an invalid no. of pieces from peer at {}.",
+                        m_tcp.endpoint().ip
+                )
+            });
+        } else {
+            m_pieces_in_possession = std::move(r_cr_msg->pieces_in_possession);
+            m_tcp.receive(BIND_THIS_SINGLE_ARG(on_msg_received));
+            // TODO: Impl - Should I start requesting pieces here?
+        }
 	}
 
 	void bt_peer_connection::on_init_conn_received(result<const_buffer_ref> r_msg_buf) {
@@ -130,8 +129,7 @@ namespace bt {
 				if (!m_torrent) {
 					// TODO: Impl - Handle no torrent (send false in has_tor field of conn_res).
 				} else {
-					m_tcp.receive([this](auto&& msg_buf)
-                        { on_msg_received(std::forward<decltype(msg_buf)>(msg_buf)); });
+					m_tcp.receive(BIND_THIS_SINGLE_ARG(on_msg_received));
 					// TODO: Impl - Send conn_res_msg.
 				}
 			}
@@ -159,7 +157,6 @@ namespace bt {
 		} else {
 			peer_messages::from_buffer(*r_msg_buf, *this);
 		}
-		// TODO: Impl - Maybe make receive_once and receive in tcp_service.
 	}
 }
 

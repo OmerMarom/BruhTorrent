@@ -15,3 +15,6 @@
 #else
 	#define BT_ABS_CLASS
 #endif
+
+// TODO: Optim - Maybe move this somewhere more appropriate.
+#define BIND_THIS_SINGLE_ARG(func) [this](auto&& arg) { func(std::forward<decltype(arg)>(arg)); }
