@@ -19,19 +19,88 @@ namespace bt {
         m_executor(other.m_executor)
     { }
 
-    void disk_io_service::write(const piece_idx_t piece_idx,
-                                buffer data,
-                                on_write_complete_fn callback) {
-        const auto piece_size = m_torrent.piece_size();
-        const auto torrent_offset = (file_size_t)piece_idx * piece_size;
+    void disk_io_service::write(const piece_idx_t piece_idx, buffer buf, on_error_fn callback) {
+        pre_file_op(
+            piece_idx,
+            [this, buf = std::move(buf)]
+            (auto file_idx, auto file_offset, auto piece_offset, auto op_size, auto callback) {
+                m_executor.write(
+                    m_files[file_idx],
+                    file_offset,
+                    { buf.begin() + piece_offset, op_size },
+                    std::move(callback)
+                );
+            },
+            std::move(callback)
+        );
+    }
+
+    void disk_io_service::read(const piece_idx_t piece_idx, on_result_fn<buffer> callback) {
+        auto shared_read_buf = std::make_shared<buffer>(m_torrent.piece_size());
+        pre_file_op(
+                piece_idx,
+                [this, shared_read_buf]
+                (auto file_idx, auto file_offset, auto piece_offset, auto op_size, auto callback) mutable {
+                    m_executor.read(
+                        m_files[file_idx],
+                        file_offset,
+                        { shared_read_buf->begin() + piece_offset, op_size },
+                        std::move(callback)
+                    );
+                },
+                [shared_read_buf, callback = std::move(callback)](error&& err) mutable {
+                    if (err) {
+                        callback(std::forward<error>(err));
+                    } else {
+                        callback(std::move(*shared_read_buf));
+                    }
+                }
+        );
+    }
+
+    void disk_io_service::pre_file_op(const piece_idx_t piece_idx, file_op_fn file_op, on_error_fn callback) {
         file_size_t file_offset;
-        auto file_idx_res = get_file_idx(torrent_offset, file_offset);
-        if (!file_idx_res) {
-            // TODO: Impl - What should I do with the files that have already been written?
-            callback(std::move(file_idx_res.error()));
-        } else {
-            write_impl(*file_idx_res, file_offset, 0, std::move(data), std::move(callback));
+        const auto torrent_offset = (file_size_t)piece_idx * m_torrent.piece_size();
+        auto r_file_idx = get_file_idx(torrent_offset, file_offset);
+        if (!r_file_idx) {
+            callback(std::move(r_file_idx.error()));
+            return;
         }
+        pre_file_op_impl(
+            *r_file_idx,
+            file_offset,
+            0,
+            std::make_shared<file_op_fn>(std::move(file_op)),
+            std::move(callback)
+        );
+    }
+
+    void disk_io_service::pre_file_op_impl(const file_idx_t file_idx, const file_size_t file_offset,
+                                           const piece_size_t piece_offset, std::shared_ptr<file_op_fn> shared_file_op,
+                                           on_error_fn callback) {
+        const auto piece_size = m_torrent.piece_size();
+        if (piece_offset == piece_size) {
+            callback({});
+            return;
+        }
+        // Single op can't exceed file:
+        const auto op_size = std::min(piece_size - piece_offset, m_files[file_idx].size() - file_offset);
+        const auto new_piece_offset = piece_offset + op_size;
+        (*shared_file_op)(
+            file_idx,
+            file_offset,
+            piece_offset,
+            op_size,
+            [this, file_idx, new_piece_offset, shared_file_op, callback = std::move(callback)]
+            (error err) mutable {
+                if (err) {
+                    callback(std::move(err));
+                } else {
+                    pre_file_op_impl(file_idx + 1, 0, new_piece_offset,
+                                     std::move(shared_file_op), std::move(callback));
+                }
+            }
+        );
     }
 
     result<file_idx_t> disk_io_service::get_file_idx(const file_size_t torrent_offset,
@@ -48,39 +117,5 @@ namespace bt {
             file_idx++;
         }
         return error(file_idx_out_of_bounds);
-    }
-
-    void disk_io_service::write_impl(const file_idx_t file_idx, const file_size_t file_offset,
-                                     const piece_size_t piece_offset, buffer data,
-                                     on_write_complete_fn callback, error err) {
-        const auto piece_size = m_torrent.piece_size();
-        if (err || piece_offset == piece_size) {
-            // TODO: Impl - What should I do with the files that have already been written?
-            callback(std::move(err));
-            return;
-        }
-        auto& target_file = m_files[file_idx];
-        // Write cant exceed file:
-        const auto write_size = std::min(piece_size - piece_offset, target_file.size() - file_offset);
-        const auto data_begin = data.begin() + (std::int64_t)piece_offset;
-        // Create a copy of the part of the buffer that's going to be written:
-        buffer data_for_this_write(data_begin, data_begin + (std::int64_t)write_size);
-        const auto write_end_offset = piece_offset + write_size;
-        m_executor.write(
-            std::move(data_for_this_write),
-            target_file,
-            file_offset,
-            [this, file_idx, write_end_offset, d = std::move(data), cb = std::move(callback)]
-            (auto&& err) mutable {
-                write_impl(
-                        file_idx + 1,
-                        0,
-                        write_end_offset,
-                        std::move(d),
-                        std::move(cb),
-                        std::forward<decltype(err)>(err)
-                );
-            }
-        );
     }
 }

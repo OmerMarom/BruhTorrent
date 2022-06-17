@@ -44,77 +44,34 @@ namespace bt {
 	}
 
 	void bt_peer_connection::on_has_piece(const peer_messages::has_piece_msg& hp_msg) {
-        if (!validate_piece_idx(hp_msg.piece_idx)) {
+        if (hp_msg.piece_idx >= m_torrent->num_of_pieces()) {
             // TODO: Impl - Handle invalid piece_idx.
         } else {
 			m_pieces_in_possession->at(hp_msg.piece_idx) = true;
 		}
 	}
 
-	void bt_peer_connection::on_req_piece(const peer_messages::request_piece_msg& rp_msg) const {
-        if (!validate_piece_idx(rp_msg.piece_idx)) {
-            // TODO: Impl - Handle invalid piece_idx.
-        } else if (!m_pieces_in_possession->at(rp_msg.piece_idx)) {
-			// TODO: Impl - Handle we don't have piece.
-		} else {
-			// TODO: Impl - Send piece.
-
-		}
+	void bt_peer_connection::on_req_piece(const peer_messages::request_piece_msg& rp_msg) {
+        const auto piece_idx = rp_msg.piece_idx;
+        m_torrent->get_piece(piece_idx, [this, piece_idx](auto r_piece_buf) {
+            if (!r_piece_buf) {
+                // TODO: Impl - Handle can't get piece.
+            } else {
+                send_message(peer_messages::piece_msg(piece_idx, std::move(*r_piece_buf)));
+            }
+        });
 	}
 
-    void bt_peer_connection::on_piece(const peer_messages::piece_msg& p_msg) {
-        if (!validate_piece_idx(p_msg.piece_idx)) {
-            // TODO: Impl - Handle invalid piece_idx.
-        } else if (m_pieces_in_possession->at(p_msg.piece_idx)) {
-            // TODO: Impl - Handle we already have piece.
-        } else if (p_msg.piece_buf.size() != m_torrent->piece_size()) {
-            // TODO: Impl - Handle invalid piece size.
-        } else {
-            // TODO: Impl - Receive piece.
-        }
+    void bt_peer_connection::on_piece(peer_messages::piece_msg p_msg) {
+        m_torrent->on_piece(
+            p_msg.piece_idx, std::move(p_msg.piece_buf),
+            [](error&& err) {
+                if (err) {
+                    // TODO: Impl - handle error.
+                }
+            }
+        );
     }
-
-    bool bt_peer_connection::validate_piece_idx(const piece_idx_t piece_idx) const {
-        if (!m_pieces_in_possession) {
-            // TODO: Impl - Handle bitfield wasn't initialized.
-            return false;
-        } else if (piece_idx > m_pieces_in_possession->size()) {
-            m_alert_service.notify_error({
-                invalid_piece_idx,
-                fmt::format("Received invalid piece idx from peer at {}.", m_tcp.endpoint().ip)
-            });
-            // TODO: Impl - Handle invalid piece idx.
-            return false;
-        }
-        return true;
-    }
-
-	void bt_peer_connection::on_conn_res_received(result<const_buffer_ref> r_msg_buf) {
-		if (!r_msg_buf) {
-			m_alert_service.notify_error(r_msg_buf.error());
-			// TODO: Impl - Handle error.
-            return;
-		}
-        auto r_cr_msg = peer_messages::conn_res_msg::from_buffer(*r_msg_buf);
-        if (!r_cr_msg) {
-            m_alert_service.notify_error(r_cr_msg.error());
-            // TODO: Impl - Handle msg invalid.
-        } else if (!r_cr_msg->has_tor()) {
-            // TODO: Impl - Handle peer doesn't have torrent.
-        } else if (r_cr_msg->pieces_in_possession.size() != m_torrent->num_of_pieces()) {
-            m_alert_service.notify_error({
-                invalid_num_of_pieces,
-                fmt::format(
-                        "Received a CONN_RES message with an invalid no. of pieces from peer at {}.",
-                        m_tcp.endpoint().ip
-                )
-            });
-        } else {
-            m_pieces_in_possession = std::move(r_cr_msg->pieces_in_possession);
-            m_tcp.receive(BIND_THIS_SINGLE_ARG(on_msg_received));
-            // TODO: Impl - Should I start requesting pieces here?
-        }
-	}
 
 	void bt_peer_connection::on_init_conn_received(result<const_buffer_ref> r_msg_buf) {
 		if (!r_msg_buf) {
@@ -128,14 +85,42 @@ namespace bt {
 			} else {
 				m_torrent = m_bt.get_torrent(r_ic_msg->tor_id);
 				if (!m_torrent) {
-					// TODO: Impl - Handle no torrent (send false in has_tor field of conn_res).
+                    send_message(peer_messages::conn_res_msg());
+                    // TODO: Impl - Handle no torrent.
 				} else {
 					m_tcp.receive(BIND_THIS_SINGLE_ARG(on_msg_received));
-					// TODO: Impl - Send conn_res_msg.
+                    send_message(peer_messages::conn_res_msg(m_torrent->pieces_in_possession()));
 				}
 			}
 		}
 	}
+
+    void bt_peer_connection::on_conn_res_received(result<const_buffer_ref> r_msg_buf) {
+        if (!r_msg_buf) {
+            m_alert_service.notify_error(r_msg_buf.error());
+            // TODO: Impl - Handle error.
+            return;
+        }
+        auto r_cr_msg = peer_messages::conn_res_msg::from_buffer(*r_msg_buf);
+        if (!r_cr_msg) {
+            m_alert_service.notify_error(r_cr_msg.error());
+            // TODO: Impl - Handle msg invalid.
+        } else if (!r_cr_msg->has_tor()) {
+            // TODO: Impl - Handle peer doesn't have torrent.
+        } else if (r_cr_msg->pieces_in_possession.size() != m_torrent->num_of_pieces()) {
+            m_alert_service.notify_error({
+                invalid_num_of_pieces,
+                fmt::format(
+                    "Received a CONN_RES message with an invalid no. of pieces from peer at {}.",
+                    m_tcp.endpoint().ip
+                )
+            });
+        } else {
+            m_pieces_in_possession = std::move(r_cr_msg->pieces_in_possession);
+            m_tcp.receive(BIND_THIS_SINGLE_ARG(on_msg_received));
+            // TODO: Impl - Should I start requesting pieces here?
+        }
+    }
 
 	void bt_peer_connection::send_message(const peer_messages::peer_message& msg) {
 		m_tcp.send(msg.to_buffer(), [this, msg_name = msg.name()](const error& err) {

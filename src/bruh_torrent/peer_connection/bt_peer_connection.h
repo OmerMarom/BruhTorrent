@@ -26,10 +26,9 @@ namespace bt {
 
 		// Incoming messages:
 		void on_has_piece(const peer_messages::has_piece_msg& hp_msg);
-		void on_req_piece(const peer_messages::request_piece_msg& rp_msg) const;
-        void on_piece(const peer_messages::piece_msg& msg);
+		void on_req_piece(const peer_messages::request_piece_msg& rp_msg);
+        void on_piece(peer_messages::piece_msg msg);
 
-		static constexpr error_code_t invalid_piece_idx = 2;
 		static constexpr error_code_t invalid_num_of_pieces = 3;
 
     private:
@@ -39,8 +38,6 @@ namespace bt {
 		void on_connected(const error& err);
 		void on_msg_received(result<const_buffer_ref> r_msg_buf);
 		void send_message(const peer_messages::peer_message& msg);
-
-        [[nodiscard]] bool validate_piece_idx(piece_idx_t piece_idx) const;
 
 		tcp_service m_tcp;
     };

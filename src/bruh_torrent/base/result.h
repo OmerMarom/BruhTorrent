@@ -84,4 +84,8 @@ namespace bt {
     private:
         std::variant<Tval, bt::error> m_value_or_error;
     };
+
+    template <typename Tval>
+    using on_result_fn = std::function<void(result<Tval>)>;
+    using on_error_fn = std::function<void(error)>;
 }

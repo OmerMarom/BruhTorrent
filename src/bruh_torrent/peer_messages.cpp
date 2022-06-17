@@ -21,7 +21,7 @@ namespace bt::peer_messages {
 			} case piece_msg::msg_id: {
                 auto r_piece = piece_msg::from_buffer(msg_buf_ref);
                 if (!r_piece) return r_piece.error();
-                bt_pc.on_piece(*r_piece);
+                bt_pc.on_piece(std::move(*r_piece));
                 break;
             } default: {
 				return {

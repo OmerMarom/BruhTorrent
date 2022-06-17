@@ -11,7 +11,7 @@ namespace bt {
 	using piece_size_t = std::uint64_t;
 
 	using file_idx_t = std::uint16_t;
-	using file_size_t = std::uint64_t;
+	using file_size_t = std::uintmax_t;
 
 	using buffer = std::vector<std::int8_t>;
 	using buffer_ref = std::span<std::int8_t>;

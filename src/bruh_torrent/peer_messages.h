@@ -124,6 +124,11 @@ namespace bt::peer_messages {
             piece_buf(std::move(p_buf))
         { }
 
+        piece_msg(piece_msg&& other) noexcept :
+            piece_idx(other.piece_idx),
+            piece_buf(std::move(other.piece_buf))
+        { }
+
         [[nodiscard]] constexpr msg_id_t id() const override { return msg_id; }
         [[nodiscard]] constexpr const char* name() const override { return "PIECE"; }
 

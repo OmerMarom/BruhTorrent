@@ -12,7 +12,7 @@ set(bt_src
     "peer_connection/peer_connection.cpp"
     "peer_connection/bt_peer_connection.cpp"
     "utils/id_utils.cpp"
-    "utils/disk_io_utils.cpp"
+    "utils/file.cpp"
     "peer_messages.cpp"
     "services/disk_executor.cpp")
 set(bt_headers
@@ -32,7 +32,7 @@ set(bt_headers
     "peer_connection/bt_peer_connection.h"
     "utils/endpoint.h"
     "utils/id_utils.h"
-    "utils/disk_io_utils.h"
+    "utils/file.h"
     "services/disk_executor.h")
 
 if(${BT_PLATFORM} STREQUAL "Windows")
